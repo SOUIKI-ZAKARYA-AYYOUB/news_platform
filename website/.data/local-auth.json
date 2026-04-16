@@ -1,0 +1,139 @@
+{
+  "users": [
+    {
+      "id": "faf1d5f3-f47a-4274-a5a5-c46d025ba530",
+      "email": "newuser_demo@example.com",
+      "username": "newuser_demo",
+      "password_hash": "$2a$10$3x5qW4jRapnVg3IUw.z1vuhNdiqBPu4mQ6mEvyM6AN1cS02LtfaJO",
+      "full_name": null,
+      "avatar_url": null,
+      "bio": null,
+      "created_at": "2026-04-09T00:37:57.987Z",
+      "updated_at": "2026-04-09T00:37:57.987Z"
+    },
+    {
+      "id": "06d4700f-e820-4f0f-83d6-5e82dc52ba4a",
+      "email": "zakarya.ayyoub.souiki@gmail.com",
+      "username": "Zaki",
+      "password_hash": "$2a$10$gMe3U7HH49wJlyaABdXjo.qOtI7Z5hshgjdNLLjOQ21n6cPdVKluG",
+      "full_name": null,
+      "avatar_url": null,
+      "bio": null,
+      "created_at": "2026-04-09T00:38:36.523Z",
+      "updated_at": "2026-04-09T00:38:36.523Z"
+    },
+    {
+      "id": "462d6441-6d04-491c-b676-b1052d11c899",
+      "email": "authfixed2@example.com",
+      "username": "authfixed2",
+      "password_hash": "$2a$10$JilI9UgUEjmd/RC8q1eThu5FHG9MuasBI0KQ89pIj3/QPSLh9RAdG",
+      "created_at": "2026-04-09T01:02:30.845Z",
+      "updated_at": "2026-04-09T01:02:30.845Z"
+    },
+    {
+      "id": "5e2fdec2-7d73-4203-839c-5ec8c451c267",
+      "email": "ayoubsouiki888@gmail.com",
+      "username": "ayyoub",
+      "password_hash": "$2a$10$5Z1O.IlzUTjCwj3lWVYKKu141CxbbbJnjtthlfahm7S6gqrhi/64e",
+      "created_at": "2026-04-15T20:45:31.783Z",
+      "updated_at": "2026-04-15T20:45:31.783Z"
+    }
+  ],
+  "preferences": [
+    {
+      "user_id": "faf1d5f3-f47a-4274-a5a5-c46d025ba530",
+      "category_id": 1,
+      "created_at": "2026-04-09T00:38:07.135Z"
+    },
+    {
+      "user_id": "faf1d5f3-f47a-4274-a5a5-c46d025ba530",
+      "category_id": 4,
+      "created_at": "2026-04-09T00:38:07.135Z"
+    },
+    {
+      "user_id": "faf1d5f3-f47a-4274-a5a5-c46d025ba530",
+      "category_id": 10,
+      "created_at": "2026-04-09T00:38:07.135Z"
+    },
+    {
+      "user_id": "06d4700f-e820-4f0f-83d6-5e82dc52ba4a",
+      "category_id": 9,
+      "created_at": "2026-04-09T11:17:15.787Z"
+    },
+    {
+      "user_id": "06d4700f-e820-4f0f-83d6-5e82dc52ba4a",
+      "category_id": 10,
+      "created_at": "2026-04-09T11:17:15.787Z"
+    },
+    {
+      "user_id": "06d4700f-e820-4f0f-83d6-5e82dc52ba4a",
+      "category_id": 4,
+      "created_at": "2026-04-09T11:17:15.787Z"
+    },
+    {
+      "user_id": "06d4700f-e820-4f0f-83d6-5e82dc52ba4a",
+      "category_id": 2,
+      "created_at": "2026-04-09T11:17:15.787Z"
+    },
+    {
+      "user_id": "06d4700f-e820-4f0f-83d6-5e82dc52ba4a",
+      "category_id": 1,
+      "created_at": "2026-04-09T11:17:15.787Z"
+    },
+    {
+      "user_id": "06d4700f-e820-4f0f-83d6-5e82dc52ba4a",
+      "category_id": 3,
+      "created_at": "2026-04-09T11:17:15.787Z"
+    },
+    {
+      "user_id": "06d4700f-e820-4f0f-83d6-5e82dc52ba4a",
+      "category_id": 7,
+      "created_at": "2026-04-09T11:17:15.787Z"
+    },
+    {
+      "user_id": "06d4700f-e820-4f0f-83d6-5e82dc52ba4a",
+      "category_id": 8,
+      "created_at": "2026-04-09T11:17:15.787Z"
+    },
+    {
+      "user_id": "5e2fdec2-7d73-4203-839c-5ec8c451c267",
+      "category_id": 2,
+      "created_at": "2026-04-16T01:09:21.218Z"
+    },
+    {
+      "user_id": "5e2fdec2-7d73-4203-839c-5ec8c451c267",
+      "category_id": 1,
+      "created_at": "2026-04-16T01:09:21.218Z"
+    },
+    {
+      "user_id": "5e2fdec2-7d73-4203-839c-5ec8c451c267",
+      "category_id": 6,
+      "created_at": "2026-04-16T01:09:21.218Z"
+    },
+    {
+      "user_id": "5e2fdec2-7d73-4203-839c-5ec8c451c267",
+      "category_id": 4,
+      "created_at": "2026-04-16T01:09:21.218Z"
+    },
+    {
+      "user_id": "5e2fdec2-7d73-4203-839c-5ec8c451c267",
+      "category_id": 5,
+      "created_at": "2026-04-16T01:09:21.218Z"
+    },
+    {
+      "user_id": "5e2fdec2-7d73-4203-839c-5ec8c451c267",
+      "category_id": 7,
+      "created_at": "2026-04-16T01:09:21.218Z"
+    },
+    {
+      "user_id": "5e2fdec2-7d73-4203-839c-5ec8c451c267",
+      "category_id": 8,
+      "created_at": "2026-04-16T01:09:21.218Z"
+    },
+    {
+      "user_id": "5e2fdec2-7d73-4203-839c-5ec8c451c267",
+      "category_id": 3,
+      "created_at": "2026-04-16T01:09:21.218Z"
+    }
+  ]
+}

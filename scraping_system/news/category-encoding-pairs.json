@@ -1,0 +1,236 @@
+[
+  {
+    "old_category": "Algérie / Actualité Nationale",
+    "old_category_code": 1,
+    "new_category": "politics",
+    "new_category_code": 4
+  },
+  {
+    "old_category": "Algérie / Développement",
+    "old_category_code": 2,
+    "new_category": "health",
+    "new_category_code": 3
+  },
+  {
+    "old_category": "Algérie / Santé et Environnement",
+    "old_category_code": 3,
+    "new_category": "health",
+    "new_category_code": 3
+  },
+  {
+    "old_category": "Algérie / Société",
+    "old_category_code": 4,
+    "new_category": "society",
+    "new_category_code": 5
+  },
+  {
+    "old_category": "Algérie / Éducation et Technologie",
+    "old_category_code": 5,
+    "new_category": "technology",
+    "new_category_code": 7
+  },
+  {
+    "old_category": "Basketball",
+    "old_category_code": 6,
+    "new_category": "sport",
+    "new_category_code": 6
+  },
+  {
+    "old_category": "Culture / Arts",
+    "old_category_code": 7,
+    "new_category": "culture",
+    "new_category_code": 1
+  },
+  {
+    "old_category": "Economie / Banque et Finances",
+    "old_category_code": 8,
+    "new_category": "economy",
+    "new_category_code": 2
+  },
+  {
+    "old_category": "Economie / Commerce et Service",
+    "old_category_code": 9,
+    "new_category": "economy",
+    "new_category_code": 2
+  },
+  {
+    "old_category": "Economie / Industrie",
+    "old_category_code": 10,
+    "new_category": "economy",
+    "new_category_code": 2
+  },
+  {
+    "old_category": "Energie et mines",
+    "old_category_code": 11,
+    "new_category": "economy",
+    "new_category_code": 2
+  },
+  {
+    "old_category": "Football",
+    "old_category_code": 12,
+    "new_category": "sport",
+    "new_category_code": 6
+  },
+  {
+    "old_category": "L'Actualité en temps réel",
+    "old_category_code": 13,
+    "new_category": "politics",
+    "new_category_code": 4
+  },
+  {
+    "old_category": "Monde / Monde Arabe",
+    "old_category_code": 14,
+    "new_category": "politics",
+    "new_category_code": 4
+  },
+  {
+    "old_category": "National",
+    "old_category_code": 15,
+    "new_category": "politics",
+    "new_category_code": 4
+  },
+  {
+    "old_category": "National Team",
+    "old_category_code": 16,
+    "new_category": "sport",
+    "new_category_code": 6
+  },
+  {
+    "old_category": "Politique",
+    "old_category_code": 17,
+    "new_category": "politics",
+    "new_category_code": 4
+  },
+  {
+    "old_category": "Présidence News",
+    "old_category_code": 18,
+    "new_category": "politics",
+    "new_category_code": 4
+  },
+  {
+    "old_category": "Sports / Sport Collectif",
+    "old_category_code": 19,
+    "new_category": "sport",
+    "new_category_code": 6
+  },
+  {
+    "old_category": "politics",
+    "old_category_code": 20,
+    "new_category": "politics",
+    "new_category_code": 4
+  },
+  {
+    "old_category": "Économie",
+    "old_category_code": 21,
+    "new_category": "economy",
+    "new_category_code": 2
+  },
+  {
+    "old_category": "أخبار",
+    "old_category_code": 22,
+    "new_category": "politics",
+    "new_category_code": 4
+  },
+  {
+    "old_category": "أخبار الجزائر",
+    "old_category_code": 23,
+    "new_category": "politics",
+    "new_category_code": 4
+  },
+  {
+    "old_category": "أخبار العالم",
+    "old_category_code": 24,
+    "new_category": "politics",
+    "new_category_code": 4
+  },
+  {
+    "old_category": "إقتصاد",
+    "old_category_code": 25,
+    "new_category": "economy",
+    "new_category_code": 2
+  },
+  {
+    "old_category": "اقتصاد",
+    "old_category_code": 26,
+    "new_category": "economy",
+    "new_category_code": 2
+  },
+  {
+    "old_category": "الجزائر",
+    "old_category_code": 27,
+    "new_category": "politics",
+    "new_category_code": 4
+  },
+  {
+    "old_category": "الحدث",
+    "old_category_code": 28,
+    "new_category": "politics",
+    "new_category_code": 4
+  },
+  {
+    "old_category": "الرياضة",
+    "old_category_code": 29,
+    "new_category": "sport",
+    "new_category_code": 6
+  },
+  {
+    "old_category": "العالم",
+    "old_category_code": 30,
+    "new_category": "politics",
+    "new_category_code": 4
+  },
+  {
+    "old_category": "النسخة المصورة",
+    "old_category_code": 31,
+    "new_category": "politics",
+    "new_category_code": 4
+  },
+  {
+    "old_category": "الوطني",
+    "old_category_code": 32,
+    "new_category": "politics",
+    "new_category_code": 4
+  },
+  {
+    "old_category": "تكنولوجيا",
+    "old_category_code": 33,
+    "new_category": "technology",
+    "new_category_code": 7
+  },
+  {
+    "old_category": "ثقافة",
+    "old_category_code": 34,
+    "new_category": "culture",
+    "new_category_code": 1
+  },
+  {
+    "old_category": "رياضة",
+    "old_category_code": 35,
+    "new_category": "sport",
+    "new_category_code": 6
+  },
+  {
+    "old_category": "سياسة",
+    "old_category_code": 36,
+    "new_category": "politics",
+    "new_category_code": 4
+  },
+  {
+    "old_category": "قناة النهار",
+    "old_category_code": 37,
+    "new_category": "culture",
+    "new_category_code": 1
+  },
+  {
+    "old_category": "محلي",
+    "old_category_code": 38,
+    "new_category": "society",
+    "new_category_code": 5
+  },
+  {
+    "old_category": "منوعات",
+    "old_category_code": 39,
+    "new_category": "society",
+    "new_category_code": 5
+  }
+]
