@@ -21,7 +21,8 @@ export function Header({ newsCount }: HeaderProps) {
 
   const handleLogout = async () => {
     await logout();
-    router.push('/signin');
+    router.replace('/signin');
+    router.refresh();
   };
 
   return (

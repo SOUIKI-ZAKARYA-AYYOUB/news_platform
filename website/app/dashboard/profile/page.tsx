@@ -1,7 +1,8 @@
 'use client';
 
-import { FormEvent, useState } from 'react';
+import { FormEvent, useEffect, useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { Header } from '@/components/dashboard/Header';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -10,6 +11,7 @@ import { Label } from '@/components/ui/label';
 import { useAuth } from '@/context/AuthContext';
 
 export default function ProfilePage() {
+  const router = useRouter();
   const { user, isLoading } = useAuth();
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
@@ -17,6 +19,12 @@ export default function ProfilePage() {
   const [passwordMessage, setPasswordMessage] = useState('');
   const [passwordError, setPasswordError] = useState('');
   const [isSubmittingPassword, setIsSubmittingPassword] = useState(false);
+
+  useEffect(() => {
+    if (!isLoading && !user) {
+      router.replace('/signin');
+    }
+  }, [isLoading, user, router]);
 
   const handleChangePassword = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();

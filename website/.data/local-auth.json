@@ -97,43 +97,13 @@
     },
     {
       "user_id": "5e2fdec2-7d73-4203-839c-5ec8c451c267",
-      "category_id": 2,
-      "created_at": "2026-04-16T01:09:21.218Z"
-    },
-    {
-      "user_id": "5e2fdec2-7d73-4203-839c-5ec8c451c267",
-      "category_id": 1,
-      "created_at": "2026-04-16T01:09:21.218Z"
-    },
-    {
-      "user_id": "5e2fdec2-7d73-4203-839c-5ec8c451c267",
-      "category_id": 6,
-      "created_at": "2026-04-16T01:09:21.218Z"
-    },
-    {
-      "user_id": "5e2fdec2-7d73-4203-839c-5ec8c451c267",
-      "category_id": 4,
-      "created_at": "2026-04-16T01:09:21.218Z"
-    },
-    {
-      "user_id": "5e2fdec2-7d73-4203-839c-5ec8c451c267",
       "category_id": 5,
-      "created_at": "2026-04-16T01:09:21.218Z"
-    },
-    {
-      "user_id": "5e2fdec2-7d73-4203-839c-5ec8c451c267",
-      "category_id": 7,
-      "created_at": "2026-04-16T01:09:21.218Z"
+      "created_at": "2026-04-19T16:28:09.194Z"
     },
     {
       "user_id": "5e2fdec2-7d73-4203-839c-5ec8c451c267",
       "category_id": 8,
-      "created_at": "2026-04-16T01:09:21.218Z"
-    },
-    {
-      "user_id": "5e2fdec2-7d73-4203-839c-5ec8c451c267",
-      "category_id": 3,
-      "created_at": "2026-04-16T01:09:21.218Z"
+      "created_at": "2026-04-19T16:28:09.194Z"
     }
   ]
 }

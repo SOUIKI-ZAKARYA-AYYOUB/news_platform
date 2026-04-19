@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { SignupStep1 } from '@/components/auth/SignupStep1';
@@ -12,7 +12,7 @@ import { useAuth } from '@/context/AuthContext';
 
 export default function SignupPage() {
   const router = useRouter();
-  const { setUser } = useAuth();
+  const { setUser, isSignedIn, isLoading: authLoading } = useAuth();
   
   const [currentStep, setCurrentStep] = useState(1);
   const [email, setEmail] = useState('');
@@ -22,6 +22,12 @@ export default function SignupPage() {
   const [selectedCategories, setSelectedCategories] = useState<number[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+
+  useEffect(() => {
+    if (!authLoading && isSignedIn) {
+      router.replace('/dashboard');
+    }
+  }, [authLoading, isSignedIn, router]);
 
   const handleSignup = async () => {
     setIsLoading(true);
@@ -43,7 +49,7 @@ export default function SignupPage() {
       });
 
       if (!signupResponse.ok) {
-        const data = await signupResponse.json();
+        const data = await signupResponse.json().catch(() => ({}));
         setError(data.error || 'Failed to create account');
         setIsLoading(false);
         return;
@@ -91,7 +97,8 @@ export default function SignupPage() {
       }
 
       // Redirect to dashboard
-      router.push('/dashboard');
+      router.replace('/dashboard');
+      router.refresh();
     } catch (error) {
       console.error('Signup error:', error);
       setError('An error occurred. Please try again.');
@@ -99,6 +106,14 @@ export default function SignupPage() {
       setIsLoading(false);
     }
   };
+
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-background to-muted flex items-center justify-center p-4">
+        <p className="text-sm text-muted-foreground">Checking session...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-muted flex items-center justify-center p-4">

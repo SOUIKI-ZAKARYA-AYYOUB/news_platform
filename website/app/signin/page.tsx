@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
@@ -11,12 +11,18 @@ import { useAuth } from '@/context/AuthContext';
 
 export default function SigninPage() {
   const router = useRouter();
-  const { setUser } = useAuth();
+  const { setUser, isSignedIn, isLoading: authLoading } = useAuth();
   
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+
+  useEffect(() => {
+    if (!authLoading && isSignedIn) {
+      router.replace('/dashboard');
+    }
+  }, [authLoading, isSignedIn, router]);
 
   const handleSignin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -36,7 +42,7 @@ export default function SigninPage() {
       });
 
       if (!response.ok) {
-        const data = await response.json();
+        const data = await response.json().catch(() => ({}));
         setError(data.error || 'Failed to sign in');
         setIsLoading(false);
         return;
@@ -44,7 +50,8 @@ export default function SigninPage() {
 
       const data = await response.json();
       setUser(data.user);
-      router.push('/dashboard');
+      router.replace('/dashboard');
+      router.refresh();
     } catch (error) {
       console.error('Signin error:', error);
       setError('An error occurred. Please try again.');
@@ -52,6 +59,14 @@ export default function SigninPage() {
       setIsLoading(false);
     }
   };
+
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-b from-background to-muted flex items-center justify-center p-4">
+        <p className="text-sm text-muted-foreground">Checking session...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-muted flex items-center justify-center p-4">

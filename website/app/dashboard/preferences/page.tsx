@@ -24,7 +24,7 @@ export default function PreferencesPage() {
 
   useEffect(() => {
     if (!authLoading && !user) {
-      router.push('/signin');
+      router.replace('/signin');
       return;
     }
 
