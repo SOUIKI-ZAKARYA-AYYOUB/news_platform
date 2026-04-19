@@ -1,2 +1,30 @@
+# Dependencies
+node_modules/
+
+# Build output
+.next/
+.vercel/
+next.user-config.*
+
 # Local ML model artifacts
 /models/
+
+# Generated scraper output
+data/
+output/
+/scraping_system/news/
+
+# Environment files
+.env
+.env.*
+.env*.local
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# OS / editor noise
+.DS_Store
+Thumbs.db
+.vscode/
