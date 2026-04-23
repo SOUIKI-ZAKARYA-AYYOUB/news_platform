@@ -6,6 +6,7 @@ import { scrapeAljazeera } from "./scrapers/aljazeera.js";
 import { scrapeElhayat } from "./scrapers/elhayat.js";
 import { scrapeElheddaf } from "./scrapers/elheddaf.js";
 import { scrapeEnnahar } from "./scrapers/ennahar.js";
+import { scrapeGenericSite } from "./scrapers/generic.js";
 import { scrapeTsa } from "./scrapers/tsa.js";
 import { scrapeWinwin } from "./scrapers/winwin.js";
 
@@ -58,7 +59,18 @@ async function main() {
   const args = parseArgs(process.argv.slice(2));
   const scrapedAt = new Date().toISOString();
   const outputPath = args.output ?? OUTPUT_DEFAULT_PATH;
-  const scrapeResults = await Promise.all(SCRAPERS.map((scraper) => runScraper(scraper, args.hours)));
+  const configuredScrapers = [...SCRAPERS];
+
+  if (args.siteUrl) {
+    configuredScrapers.push({
+      source: "GENERIC",
+      run: ({ hours }) => scrapeGenericSite({ siteUrl: args.siteUrl, hours })
+    });
+  }
+
+  const scrapeResults = await Promise.all(
+    configuredScrapers.map((scraper) => runScraper(scraper, args.hours))
+  );
 
   const articles = dedupeArticles(
     scrapeResults

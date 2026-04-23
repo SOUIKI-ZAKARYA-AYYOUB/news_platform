@@ -18,6 +18,15 @@ npm run scrape
 
 This updates the news JSON data used by the model and website.
 
+To try the new generic fallback scraper for an arbitrary news site:
+
+```powershell
+cd scraping_system
+node src/index.js --site-url https://example-news-site.com --hours 24
+```
+
+That keeps the built-in source scrapers and adds one generic scraper run for the URL you pass. The generic scraper uses RSS, sitemap discovery, homepage repeated-card detection, and article metadata extraction without using any LLM.
+
 ## 2) Run The Model
 
 From the project root:

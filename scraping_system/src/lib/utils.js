@@ -36,7 +36,8 @@ export function decodeHtmlEntities(value) {
 export function parseArgs(argv) {
   const args = {
     hours: 24,
-    output: null
+    output: null,
+    siteUrl: null
   };
 
   for (let index = 0; index < argv.length; index += 1) {
@@ -51,6 +52,12 @@ export function parseArgs(argv) {
     if (token === "--output" && argv[index + 1]) {
       args.output = argv[index + 1];
       index += 1;
+      continue;
+    }
+
+    if ((token === "--site-url" || token === "--url") && argv[index + 1]) {
+      args.siteUrl = argv[index + 1];
+      index += 1;
     }
   }
 
@@ -59,6 +66,22 @@ export function parseArgs(argv) {
   }
 
   return args;
+}
+
+export function hostnameToSourceName(url) {
+  try {
+    const hostname = new URL(url).hostname.replace(/^www\./, "");
+    return hostname
+      .split(".")
+      .filter(Boolean)
+      .slice(0, -1)
+      .join("_")
+      .replace(/[^a-z0-9]+/gi, "_")
+      .replace(/^_+|_+$/g, "")
+      .toUpperCase();
+  } catch {
+    return "GENERIC";
+  }
 }
 
 export function toIsoString(value) {
