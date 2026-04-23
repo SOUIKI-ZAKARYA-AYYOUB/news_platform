@@ -7,6 +7,7 @@ export const WINWIN_FEED_URL = "https://www.winwin.com/feed";
 export const WINWIN_GOOGLE_NEWS_URL = "https://www.winwin.com/google-news.xml";
 export const ALGERIA_TIMEZONE = "Africa/Algiers";
 
+
 export const OUTPUT_DEFAULT_PATH = "news/latest-news.json";
 
 export const USER_AGENT =
