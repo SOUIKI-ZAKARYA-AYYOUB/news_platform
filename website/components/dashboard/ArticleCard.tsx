@@ -3,6 +3,8 @@
 import { Article } from '@/lib/supabase';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { ExternalLink } from 'lucide-react';
 
 const DEFAULT_NEWS_IMAGE = '/news_default.jpg';
 
@@ -57,14 +59,22 @@ export function ArticleCard({ article, categoryName }: ArticleCardProps) {
         )}
 
         {article.source_url && (
-          <a
-            href={article.source_url}
-            target="_blank"
-            rel="noopener noreferrer"
-            className="text-xs text-primary hover:underline mt-2 block"
+          <Button
+            asChild
+            variant="secondary"
+            size="sm"
+            className="mt-3 w-full"
           >
-            Read full article
-          </a>
+            <a
+              href={article.source_url}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Read full article
+              <ExternalLink className="size-4" aria-hidden="true" />
+              <span className="sr-only">Opens in a new tab</span>
+            </a>
+          </Button>
         )}
       </div>
     </Card>

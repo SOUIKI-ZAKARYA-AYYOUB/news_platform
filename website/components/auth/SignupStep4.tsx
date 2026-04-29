@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { FieldGroup, FieldLabel } from '@/components/ui/field';
 import { Category } from '@/lib/supabase';
+import { apiFetch } from '@/lib/api';
 
 interface SignupStep4Props {
   selectedCategories: number[];
@@ -28,7 +29,7 @@ export function SignupStep4({
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        const response = await fetch('/api/categories?usedOnly=1');
+        const response = await apiFetch('/api/categories?usedOnly=1');
         const data = await response.json();
 
         if (!response.ok) {

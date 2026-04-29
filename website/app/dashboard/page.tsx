@@ -6,6 +6,7 @@ import { ArticleCard } from '@/components/dashboard/ArticleCard';
 import { Article, Category } from '@/lib/supabase';
 import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
+import { apiFetch } from '@/lib/api';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -71,7 +72,7 @@ export default function DashboardPage() {
     const fetchData = async () => {
       try {
         // Fetch categories
-        const categoriesResponse = await fetch('/api/categories?usedOnly=1');
+        const categoriesResponse = await apiFetch('/api/categories?usedOnly=1');
         if (categoriesResponse.ok) {
           const categoriesData = await categoriesResponse.json();
           const categoryMap = new Map<number, string>();
@@ -82,7 +83,7 @@ export default function DashboardPage() {
         }
 
         // Fetch articles
-        const articlesResponse = await fetch('/api/articles');
+        const articlesResponse = await apiFetch('/api/articles');
         const articlesData = await articlesResponse.json();
         if (articlesData.articles) {
           setArticles(articlesData.articles);

@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Card } from '@/components/ui/card';
 import { FieldGroup, FieldLabel } from '@/components/ui/field';
 import { useAuth } from '@/context/AuthContext';
+import { apiFetch } from '@/lib/api';
 
 export default function SigninPage() {
   const router = useRouter();
@@ -30,11 +31,8 @@ export default function SigninPage() {
     setError('');
 
     try {
-      const response = await fetch('/api/auth/signin', {
+      const response = await apiFetch('/api/auth/signin', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify({
           email,
           password,

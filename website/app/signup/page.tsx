@@ -9,6 +9,7 @@ import { SignupStep3 } from '@/components/auth/SignupStep3';
 import { SignupStep4 } from '@/components/auth/SignupStep4';
 import { Card } from '@/components/ui/card';
 import { useAuth } from '@/context/AuthContext';
+import { apiFetch } from '@/lib/api';
 
 export default function SignupPage() {
   const router = useRouter();
@@ -35,11 +36,8 @@ export default function SignupPage() {
 
     try {
       // Step 1: Create user account
-      const signupResponse = await fetch('/api/auth/signup', {
+      const signupResponse = await apiFetch('/api/auth/signup', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify({
           email,
           username,
@@ -59,11 +57,8 @@ export default function SignupPage() {
       const userId = userData.user.id;
 
       // Step 2: Sign in the user first (so session is available for preferences)
-      const signinResponse = await fetch('/api/auth/signin', {
+      const signinResponse = await apiFetch('/api/auth/signin', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify({
           email,
           password,
@@ -80,11 +75,8 @@ export default function SignupPage() {
       setUser(signinData.user);
 
       // Step 3: Save user preferences (now with session)
-      const preferencesResponse = await fetch('/api/preferences', {
+      const preferencesResponse = await apiFetch('/api/preferences', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify({
           categoryIds: selectedCategories,
         }),

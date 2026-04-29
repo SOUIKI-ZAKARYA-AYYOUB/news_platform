@@ -8,6 +8,7 @@ import React, {
   useEffect,
   ReactNode,
 } from 'react';
+import { apiFetch } from '@/lib/api';
 
 export interface AuthUser {
   id: string;
@@ -34,7 +35,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setIsLoading(true);
 
     try {
-      const response = await fetch('/api/auth/session', {
+      const response = await apiFetch('/api/auth/session', {
         method: 'GET',
         cache: 'no-store',
       });
@@ -60,7 +61,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const logout = useCallback(async () => {
     try {
-      await fetch('/api/auth/logout', {
+      await apiFetch('/api/auth/logout', {
         method: 'POST',
         cache: 'no-store',
       });

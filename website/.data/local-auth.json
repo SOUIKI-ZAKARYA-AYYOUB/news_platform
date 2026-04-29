@@ -45,6 +45,38 @@
       "password_hash": "$2a$10$OzemJMPOqwt8IpXEyeSOI.3dhMpPaiCCsA6tdjsOOeiFd2UmDMcVq",
       "created_at": "2026-04-19T17:06:52.690Z",
       "updated_at": "2026-04-19T17:06:52.690Z"
+    },
+    {
+      "id": "6e6d59a0-0c1f-4b31-ab2a-cd4c94e58b09",
+      "email": "zakarya@gmail.com",
+      "username": "zaki_13",
+      "password_hash": "$2a$10$VLcKmxYc/7AhyhleD9EyaOBBxWbay0oMHm1t2FCKC9zpia3ppswHO",
+      "created_at": "2026-04-29T18:08:11.606Z",
+      "updated_at": "2026-04-29T18:08:11.606Z"
+    },
+    {
+      "id": "a9e4f0aa-afce-4800-819c-73435f3201a6",
+      "email": "mohamed@gmail.com",
+      "username": "mohamed",
+      "password_hash": "$2a$10$DQIUnzfhyZEHDAIVIPItzePm6efQVUrQF/XGBti74m4WEcz4129Uu",
+      "created_at": "2026-04-29T18:10:12.302Z",
+      "updated_at": "2026-04-29T18:10:12.302Z"
+    },
+    {
+      "id": "fead547e-32ca-4af6-ab2c-d598beda56c4",
+      "email": "zakarya.ayyoub.souiki.dz@gmail.com",
+      "username": "zakarya_souiki",
+      "password_hash": "$2a$10$vXKJ57IVXOhHNxypkCkyg.9stz0OE3tOrOTPjw5.2TTsxsTEb2oVy",
+      "created_at": "2026-04-29T18:16:55.613Z",
+      "updated_at": "2026-04-29T18:16:55.613Z"
+    },
+    {
+      "id": "8dd4acb4-a8c6-4596-bec1-8115586c226d",
+      "email": "yacine@gmail.com",
+      "username": "yacine_c",
+      "password_hash": "$2a$10$EzqIyoeJxOBiy1IuWwfX9.Pii7QD/GvQX79LRUiEZpm9s2FRv6vxy",
+      "created_at": "2026-04-29T18:47:47.071Z",
+      "updated_at": "2026-04-29T18:47:47.071Z"
     }
   ],
   "preferences": [
@@ -112,6 +144,36 @@
       "user_id": "70ef4b75-a054-4549-8d4a-27494afc2d87",
       "category_id": 4,
       "created_at": "2026-04-19T17:08:17.988Z"
+    },
+    {
+      "user_id": "6e6d59a0-0c1f-4b31-ab2a-cd4c94e58b09",
+      "category_id": 7,
+      "created_at": "2026-04-29T18:08:12.508Z"
+    },
+    {
+      "user_id": "6e6d59a0-0c1f-4b31-ab2a-cd4c94e58b09",
+      "category_id": 4,
+      "created_at": "2026-04-29T18:08:12.508Z"
+    },
+    {
+      "user_id": "a9e4f0aa-afce-4800-819c-73435f3201a6",
+      "category_id": 7,
+      "created_at": "2026-04-29T18:10:12.598Z"
+    },
+    {
+      "user_id": "a9e4f0aa-afce-4800-819c-73435f3201a6",
+      "category_id": 4,
+      "created_at": "2026-04-29T18:10:12.598Z"
+    },
+    {
+      "user_id": "8dd4acb4-a8c6-4596-bec1-8115586c226d",
+      "category_id": 7,
+      "created_at": "2026-04-29T18:50:51.862Z"
+    },
+    {
+      "user_id": "8dd4acb4-a8c6-4596-bec1-8115586c226d",
+      "category_id": 3,
+      "created_at": "2026-04-29T18:50:51.862Z"
     }
   ]
 }

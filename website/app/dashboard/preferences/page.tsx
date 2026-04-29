@@ -10,6 +10,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { FieldGroup, FieldLabel } from '@/components/ui/field';
 import { Category } from '@/lib/supabase';
 import { useAuth } from '@/context/AuthContext';
+import { apiFetch } from '@/lib/api';
 
 export default function PreferencesPage() {
   const router = useRouter();
@@ -31,13 +32,19 @@ export default function PreferencesPage() {
     const fetchData = async () => {
       try {
         // Fetch categories
-        const categoriesResponse = await fetch('/api/categories?usedOnly=1');
+        const categoriesResponse = await apiFetch('/api/categories?usedOnly=1');
         const categoriesData = await categoriesResponse.json();
         const availableCategories = categoriesData.categories || [];
         setCategories(availableCategories);
 
         // Fetch user preferences
-        const preferencesResponse = await fetch('/api/preferences');
+        const preferencesResponse = await apiFetch('/api/preferences');
+        if (preferencesResponse.status === 401) {
+          setError('Your session expired. Please sign in again.');
+          router.replace('/signin');
+          return;
+        }
+
         if (preferencesResponse.ok) {
           const preferencesData = await preferencesResponse.json();
           const availableCategoryIds = new Set<number>(
@@ -82,15 +89,18 @@ export default function PreferencesPage() {
     setSuccess('');
 
     try {
-      const response = await fetch('/api/preferences', {
+      const response = await apiFetch('/api/preferences', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify({
           categoryIds: selectedCategories,
         }),
       });
+
+      if (response.status === 401) {
+        setError('Your session expired. Please sign in again.');
+        router.replace('/signin');
+        return;
+      }
 
       if (!response.ok) {
         const data = await response.json();
