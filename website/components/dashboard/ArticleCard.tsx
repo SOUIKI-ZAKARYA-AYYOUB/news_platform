@@ -15,6 +15,13 @@ interface ArticleCardProps {
 
 export function ArticleCard({ article, categoryName }: ArticleCardProps) {
   const imageSrc = article.image_url || DEFAULT_NEWS_IMAGE;
+  const title = article.neutral_headline || article.title;
+  const summary = article.summary || article.description;
+  const sourceCount = article.source_count || article.sources?.length || (article.author ? 1 : 0);
+  const clusterSize = article.cluster_size || 1;
+  const sourceNames = Array.from(
+    new Set((article.sources || []).map((source) => source.source).filter(Boolean))
+  );
   const publishedDate = article.published_at
     ? new Date(article.published_at).toLocaleDateString('en-US', {
         year: 'numeric',
@@ -35,27 +42,37 @@ export function ArticleCard({ article, categoryName }: ArticleCardProps) {
       <div className="p-4">
         <div className="flex items-start justify-between gap-2 mb-2">
           <h3 className="font-semibold text-foreground line-clamp-2">
-            {article.title}
+            {title}
           </h3>
         </div>
 
-        {article.description && (
-          <p className="text-sm text-muted-foreground line-clamp-2 mb-3">
-            {article.description}
+        {summary && (
+          <p className="text-sm text-muted-foreground line-clamp-3 mb-3">
+            {summary}
           </p>
         )}
 
-        <div className="flex items-center justify-between">
-          <div className="flex gap-2">
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex flex-wrap gap-2">
             {categoryName && (
               <Badge variant="secondary">{categoryName}</Badge>
+            )}
+            {sourceCount > 0 && (
+              <Badge variant="outline">
+                {sourceCount} {sourceCount === 1 ? 'source' : 'sources'}
+              </Badge>
+            )}
+            {clusterSize > 1 && (
+              <Badge variant="outline">same event</Badge>
             )}
           </div>
           <span className="text-xs text-muted-foreground">{publishedDate}</span>
         </div>
 
-        {article.author && (
-          <p className="text-xs text-muted-foreground mt-2">By {article.author}</p>
+        {(sourceNames.length > 0 || article.author) && (
+          <p className="text-xs text-muted-foreground mt-2 line-clamp-1">
+            {sourceNames.length > 0 ? sourceNames.join(', ') : article.author}
+          </p>
         )}
 
         {article.source_url && (

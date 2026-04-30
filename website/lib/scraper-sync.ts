@@ -11,15 +11,36 @@ type ScrapedArticle = {
   source?: string;
   url?: string;
   title?: string;
+  original_title?: string;
   description?: string;
+  content?: string;
+  summary?: string;
+  bias_reduced_summary?: string;
+  neutral_headline?: string;
   image_url?: string;
   publication_date?: string;
   category?: string;
+  categories?: string[];
+  cluster_id?: string;
+  story_id?: string;
+  cluster_type?: string;
+  cluster_size?: number;
+  source_count?: number;
+  sources?: StorySource[];
+  meta_story?: Record<string, unknown>;
 };
 
 type ScrapedPayload = {
   articles?: ScrapedArticle[];
   scraped_at?: string;
+};
+
+type StorySource = {
+  source?: string;
+  title?: string | null;
+  url?: string | null;
+  published_at?: string | null;
+  category?: string | null;
 };
 
 type PublicArticle = {
@@ -29,10 +50,20 @@ type PublicArticle = {
   title: string;
   description?: string;
   content?: string;
+  summary?: string;
+  neutral_headline?: string;
+  original_title?: string;
   author?: string;
   source_url?: string;
   image_url?: string;
   published_at?: string;
+  cluster_id?: string;
+  story_id?: string;
+  cluster_type?: string;
+  cluster_size?: number;
+  source_count?: number;
+  sources?: StorySource[];
+  meta_story?: Record<string, unknown>;
   created_at: string;
   updated_at: string;
 };
@@ -78,6 +109,30 @@ const STANDARD_CATEGORY_LABELS: Record<string, string> = {
   technology: 'Technology'
 };
 
+const STANDARD_TO_DB_CATEGORY_CANDIDATES: Record<string, string[]> = {
+  culture: ['Culture', 'Entertainment'],
+  economy: ['Economy'],
+  health: ['Health', 'Environment'],
+  other: ['Others', 'Other', 'World'],
+  politics: ['Politics', 'World'],
+  society: ['Society', 'World', 'Education'],
+  sport: ['Sport', 'Sports'],
+  technology: ['Technology', 'Science']
+};
+
+const STORY_COLUMN_KEYS = [
+  'summary',
+  'neutral_headline',
+  'original_title',
+  'cluster_id',
+  'story_id',
+  'cluster_type',
+  'cluster_size',
+  'source_count',
+  'sources',
+  'meta_story'
+] as const;
+
 function normalizeStandardCategoryKey(value: string | null | undefined): string {
   const normalized = normalizeText(value);
 
@@ -105,6 +160,24 @@ function normalizeStandardCategoryKey(value: string | null | undefined): string 
   return 'other';
 }
 
+function getArticleCategoryKeys(article: ScrapedArticle): string[] {
+  const values = Array.isArray(article.categories) && article.categories.length > 0
+    ? article.categories
+    : [article.category];
+
+  const keys = values
+    .map((value) => normalizeStandardCategoryKey(value))
+    .filter(Boolean);
+  const uniqueKeys = [...new Set(keys)];
+  const meaningfulKeys = uniqueKeys.filter((key) => key !== 'other');
+
+  return meaningfulKeys.length > 0 ? meaningfulKeys : ['other'];
+}
+
+function getPrimaryCategoryKey(article: ScrapedArticle): string {
+  return getArticleCategoryKeys(article)[0] || 'other';
+}
+
 function getStandardCategoryId(categoryKey: string): number {
   const index = STANDARD_CATEGORY_ORDER.indexOf(categoryKey as (typeof STANDARD_CATEGORY_ORDER)[number]);
   if (index === -1) {
@@ -118,9 +191,10 @@ function buildPublicCategoryCounts(rawArticles: ScrapedArticle[]): Record<number
   const counts: Record<number, number> = {};
 
   for (const article of rawArticles) {
-    const categoryKey = normalizeStandardCategoryKey(article.category);
-    const categoryId = getStandardCategoryId(categoryKey);
-    counts[categoryId] = (counts[categoryId] || 0) + 1;
+    for (const categoryKey of getArticleCategoryKeys(article)) {
+      const categoryId = getStandardCategoryId(categoryKey);
+      counts[categoryId] = (counts[categoryId] || 0) + 1;
+    }
   }
 
   return counts;
@@ -133,7 +207,7 @@ export async function getPublicCategoriesFromScraper(): Promise<PublicCategory[]
   const now = new Date().toISOString();
 
   return STANDARD_CATEGORY_ORDER
-    .map((categoryKey) => {
+    .map((categoryKey): PublicCategory | null => {
       const id = getStandardCategoryId(categoryKey);
       const articleCount = countsById[id] || 0;
 
@@ -228,6 +302,26 @@ function inferCategoryName(article: ScrapedArticle): string {
   }
 
   return 'World';
+}
+
+function resolveCategoryIdForArticle(
+  article: ScrapedArticle,
+  categoryByName: Map<string, number>,
+  fallbackCategoryId: number
+): number {
+  const standardCandidates = getArticleCategoryKeys(article).flatMap(
+    (categoryKey) => STANDARD_TO_DB_CATEGORY_CANDIDATES[categoryKey] || []
+  );
+  const candidates = [...new Set([...standardCandidates, inferCategoryName(article), 'World'])];
+
+  for (const candidate of candidates) {
+    const categoryId = categoryByName.get(normalizeText(candidate));
+    if (categoryId) {
+      return categoryId;
+    }
+  }
+
+  return fallbackCategoryId;
 }
 
 function resolvePathFromCwd(targetPath: string) {
@@ -388,6 +482,41 @@ async function getExistingUrls(urls: string[]): Promise<Set<string>> {
   return existing;
 }
 
+function isMissingStoryColumnError(error: { message?: string }): boolean {
+  const message = normalizeText(error.message);
+  return STORY_COLUMN_KEYS.some((key) => message.includes(key)) ||
+    (message.includes('column') && message.includes('schema cache'));
+}
+
+function stripStoryColumns<T extends Record<string, unknown>>(row: T) {
+  const stripped = { ...row };
+
+  for (const key of STORY_COLUMN_KEYS) {
+    delete stripped[key];
+  }
+
+  return stripped;
+}
+
+async function insertArticleChunk(rows: Array<Record<string, unknown>>) {
+  const { error } = await supabase.from('articles').insert(rows);
+
+  if (!error) {
+    return;
+  }
+
+  if (!isMissingStoryColumnError(error)) {
+    throw new Error(`Failed to insert articles: ${error.message}`);
+  }
+
+  const fallbackRows = rows.map(stripStoryColumns);
+  const { error: fallbackError } = await supabase.from('articles').insert(fallbackRows);
+
+  if (fallbackError) {
+    throw new Error(`Failed to insert articles: ${fallbackError.message}`);
+  }
+}
+
 export async function syncArticlesFromScraper(options: { runScraper?: boolean } = {}): Promise<ScraperSyncResult> {
   if (options.runScraper !== false) {
     await runScraperSystem();
@@ -421,23 +550,34 @@ export async function syncArticlesFromScraper(options: { runScraper?: boolean } 
 
   const preparedRows = rawArticles
     .map((article) => {
-      const categoryName = inferCategoryName(article);
-      const categoryId = categoryByName.get(normalizeText(categoryName)) || worldCategoryId;
+      const categoryId = resolveCategoryIdForArticle(article, categoryByName, worldCategoryId);
       const sourceUrl = truncate(article.url ?? null, 500);
+      const headline = article.neutral_headline || article.title;
+      const summary = article.summary || article.bias_reduced_summary || article.description;
 
-      if (!article.title || !sourceUrl) {
+      if (!headline || !sourceUrl) {
         return null;
       }
 
       return {
         category_id: categoryId,
-        title: truncate(article.title, 500),
-        description: truncate(article.description, 5000),
-        content: truncate(article.description, 15000),
+        title: truncate(headline, 500),
+        description: truncate(summary, 5000),
+        content: truncate(article.content || summary, 15000),
+        summary: truncate(summary, 5000),
+        neutral_headline: truncate(article.neutral_headline || headline, 500),
+        original_title: truncate(article.original_title || article.title, 500),
         author: truncate(article.source ?? 'External Scraper', 255),
         source_url: sourceUrl,
         image_url: truncate(article.image_url, 500),
-        published_at: article.publication_date || payload.scraped_at || new Date().toISOString()
+        published_at: article.publication_date || payload.scraped_at || new Date().toISOString(),
+        cluster_id: truncate(article.cluster_id || article.story_id, 255),
+        story_id: truncate(article.story_id || article.cluster_id, 255),
+        cluster_type: truncate(article.cluster_type, 100),
+        cluster_size: article.cluster_size || 1,
+        source_count: article.source_count || article.sources?.length || 1,
+        sources: article.sources || [],
+        meta_story: article.meta_story || null
       };
     })
     .filter((row): row is NonNullable<typeof row> => Boolean(row?.title && row?.source_url));
@@ -457,11 +597,7 @@ export async function syncArticlesFromScraper(options: { runScraper?: boolean } 
       continue;
     }
 
-    const { error } = await supabase.from('articles').insert(chunk);
-    if (error) {
-      throw new Error(`Failed to insert articles: ${error.message}`);
-    }
-
+    await insertArticleChunk(chunk);
     insertedCount += chunk.length;
   }
 
@@ -485,18 +621,32 @@ export async function getScrapedArticlesForPublicFeed(limit: number | null = nul
   const now = new Date().toISOString();
   const selectedArticles = limit === null ? rawArticles : rawArticles.slice(0, limit);
 
-  return selectedArticles.map((article, index) => ({
-    id: -(index + 1),
-    category_id: getStandardCategoryId(normalizeStandardCategoryKey(article.category)),
-    category: normalizeStandardCategoryKey(article.category),
-    title: article.title || 'Untitled Article',
-    description: article.description || undefined,
-    content: article.description || undefined,
-    author: article.source || 'External Scraper',
-    source_url: article.url || undefined,
-    image_url: article.image_url || undefined,
-    published_at: article.publication_date || payload.scraped_at || now,
-    created_at: now,
-    updated_at: now
-  }));
+  return selectedArticles.map((article, index) => {
+    const categoryKey = getPrimaryCategoryKey(article);
+
+    return {
+      id: -(index + 1),
+      category_id: getStandardCategoryId(categoryKey),
+      category: categoryKey,
+      title: article.neutral_headline || article.title || 'Untitled Article',
+      description: article.summary || article.description || undefined,
+      content: article.content || article.summary || article.description || undefined,
+      summary: article.summary || article.description || undefined,
+      neutral_headline: article.neutral_headline || article.title || undefined,
+      original_title: article.original_title || article.title || undefined,
+      author: article.source || 'External Scraper',
+      source_url: article.url || undefined,
+      image_url: article.image_url || undefined,
+      published_at: article.publication_date || payload.scraped_at || now,
+      cluster_id: article.cluster_id || article.story_id,
+      story_id: article.story_id || article.cluster_id,
+      cluster_type: article.cluster_type,
+      cluster_size: article.cluster_size || 1,
+      source_count: article.source_count || article.sources?.length || 1,
+      sources: article.sources || [],
+      meta_story: article.meta_story,
+      created_at: now,
+      updated_at: now
+    };
+  });
 }

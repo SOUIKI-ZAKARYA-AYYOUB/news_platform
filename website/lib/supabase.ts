@@ -42,13 +42,30 @@ export interface UserPreference {
 export interface Article {
   id: number;
   category_id: number;
+  category?: string;
   title: string;
   description?: string;
   content?: string;
+  summary?: string;
+  neutral_headline?: string;
+  original_title?: string;
   author?: string;
   source_url?: string;
   image_url?: string;
   published_at?: string;
+  cluster_id?: string;
+  story_id?: string;
+  cluster_type?: string;
+  cluster_size?: number;
+  source_count?: number;
+  sources?: Array<{
+    source?: string;
+    title?: string | null;
+    url?: string | null;
+    published_at?: string | null;
+    category?: string | null;
+  }>;
+  meta_story?: Record<string, unknown>;
   created_at: string;
   updated_at: string;
 }

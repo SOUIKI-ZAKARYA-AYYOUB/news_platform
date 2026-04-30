@@ -37,7 +37,9 @@ export function parseArgs(argv) {
   const args = {
     hours: 24,
     output: null,
-    siteUrl: null
+    siteUrl: null,
+    processStories: true,
+    rawOutput: null
   };
 
   for (let index = 0; index < argv.length; index += 1) {
@@ -57,6 +59,17 @@ export function parseArgs(argv) {
 
     if ((token === "--site-url" || token === "--url") && argv[index + 1]) {
       args.siteUrl = argv[index + 1];
+      index += 1;
+      continue;
+    }
+
+    if (token === "--no-process") {
+      args.processStories = false;
+      continue;
+    }
+
+    if (token === "--raw-output" && argv[index + 1]) {
+      args.rawOutput = argv[index + 1];
       index += 1;
     }
   }

@@ -1,5 +1,6 @@
 import { OUTPUT_DEFAULT_PATH } from "./config/sites.js";
 import { createScrapeError } from "./lib/scraper.js";
+import { processNewsPayload } from "./lib/story-processor.js";
 import { createArticleKey, parseArgs, writeJsonFile } from "./lib/utils.js";
 import { scrapeAps } from "./scrapers/aps.js";
 import { scrapeAljazeera } from "./scrapers/aljazeera.js";
@@ -84,7 +85,7 @@ async function main() {
     scrapeResults.map((result) => [result.source, result.articles.length])
   );
 
-  const payload = {
+  const rawPayload = {
     scraped_at: scrapedAt,
     window_hours: args.hours,
     total_articles: articles.length,
@@ -93,6 +94,20 @@ async function main() {
     errors: scrapeResults.flatMap((result) => result.errors),
     articles
   };
+
+  const payload = args.processStories
+    ? processNewsPayload(rawPayload, { scrapedAt })
+    : rawPayload;
+
+  if (args.processStories) {
+    const rawOutputPath =
+      args.rawOutput ??
+      (outputPath.endsWith(".json")
+        ? outputPath.replace(/\.json$/i, "-raw.json")
+        : `${outputPath}-raw.json`);
+
+    await writeJsonFile(rawOutputPath, rawPayload);
+  }
 
   const writtenPath = await writeJsonFile(outputPath, payload);
   process.stdout.write(`${JSON.stringify(payload, null, 2)}\n`);

@@ -38,13 +38,35 @@ CREATE TABLE IF NOT EXISTS articles (
   title VARCHAR(500) NOT NULL,
   description TEXT,
   content TEXT,
+  summary TEXT,
+  neutral_headline VARCHAR(500),
+  original_title VARCHAR(500),
   author VARCHAR(255),
   source_url VARCHAR(500),
   image_url VARCHAR(500),
+  cluster_id VARCHAR(255),
+  story_id VARCHAR(255),
+  cluster_type VARCHAR(100),
+  cluster_size INT DEFAULT 1,
+  source_count INT DEFAULT 1,
+  sources JSONB DEFAULT '[]'::jsonb,
+  meta_story JSONB,
   published_at TIMESTAMP,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+-- Add story-processing columns to existing installations.
+ALTER TABLE articles ADD COLUMN IF NOT EXISTS summary TEXT;
+ALTER TABLE articles ADD COLUMN IF NOT EXISTS neutral_headline VARCHAR(500);
+ALTER TABLE articles ADD COLUMN IF NOT EXISTS original_title VARCHAR(500);
+ALTER TABLE articles ADD COLUMN IF NOT EXISTS cluster_id VARCHAR(255);
+ALTER TABLE articles ADD COLUMN IF NOT EXISTS story_id VARCHAR(255);
+ALTER TABLE articles ADD COLUMN IF NOT EXISTS cluster_type VARCHAR(100);
+ALTER TABLE articles ADD COLUMN IF NOT EXISTS cluster_size INT DEFAULT 1;
+ALTER TABLE articles ADD COLUMN IF NOT EXISTS source_count INT DEFAULT 1;
+ALTER TABLE articles ADD COLUMN IF NOT EXISTS sources JSONB DEFAULT '[]'::jsonb;
+ALTER TABLE articles ADD COLUMN IF NOT EXISTS meta_story JSONB;
 
 -- Create scrape_logs table for tracking background jobs
 CREATE TABLE IF NOT EXISTS scrape_logs (
@@ -76,6 +98,8 @@ CREATE INDEX IF NOT EXISTS idx_user_preferences_user_id ON user_preferences(user
 CREATE INDEX IF NOT EXISTS idx_user_preferences_category_id ON user_preferences(category_id);
 CREATE INDEX IF NOT EXISTS idx_articles_category_id ON articles(category_id);
 CREATE INDEX IF NOT EXISTS idx_articles_published_at ON articles(published_at DESC);
+CREATE INDEX IF NOT EXISTS idx_articles_cluster_id ON articles(cluster_id);
+CREATE INDEX IF NOT EXISTS idx_articles_story_id ON articles(story_id);
 CREATE INDEX IF NOT EXISTS idx_scrape_logs_category_id ON scrape_logs(category_id);
 
 -- Enable Row Level Security (RLS) for security
