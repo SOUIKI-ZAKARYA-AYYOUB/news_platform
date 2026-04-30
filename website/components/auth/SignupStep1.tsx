@@ -56,7 +56,7 @@ export function SignupStep1({
 
       <Button
         onClick={handleNext}
-        disabled={isLoading || !email}
+        disabled={isLoading}
         className="w-full"
       >
         {isLoading ? 'Loading...' : 'Next'}

@@ -96,7 +96,7 @@ export function SignupStep3({
         </Button>
         <Button
           onClick={handleNext}
-          disabled={isLoading || !password || !confirmPassword}
+          disabled={isLoading}
           className="flex-1"
         >
           {isLoading ? 'Loading...' : 'Next'}

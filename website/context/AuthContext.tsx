@@ -33,6 +33,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const hydrateSession = useCallback(async () => {
     setIsLoading(true);
+    const fallbackTimeoutId = setTimeout(() => {
+      setIsLoading(false);
+    }, 7000);
 
     try {
       const response = await apiFetch('/api/auth/session', {
@@ -51,6 +54,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       console.error('Session hydration failed:', error);
       setUser(null);
     } finally {
+      clearTimeout(fallbackTimeoutId);
       setIsLoading(false);
     }
   }, []);

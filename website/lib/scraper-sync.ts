@@ -332,12 +332,32 @@ async function loadScrapedPayload(): Promise<ScrapedPayload> {
       throw new Error(`Failed to fetch scraper JSON from URL: ${response.status}`);
     }
 
-    return (await response.json()) as ScrapedPayload;
+    const payload = await response.json();
+    return normalizeScrapedPayload(payload);
   }
 
   const outputPath = await resolveScraperOutputPath();
   const fileContent = await fs.readFile(outputPath, 'utf8');
-  return JSON.parse(fileContent) as ScrapedPayload;
+  return normalizeScrapedPayload(JSON.parse(fileContent));
+}
+
+function normalizeScrapedPayload(raw: unknown): ScrapedPayload {
+  if (Array.isArray(raw)) {
+    return { articles: raw as ScrapedArticle[] };
+  }
+
+  if (raw && typeof raw === 'object') {
+    const candidate = raw as ScrapedPayload & { items?: ScrapedArticle[] };
+    if (Array.isArray(candidate.articles)) {
+      return { articles: candidate.articles, scraped_at: candidate.scraped_at };
+    }
+
+    if (Array.isArray(candidate.items)) {
+      return { articles: candidate.items, scraped_at: candidate.scraped_at };
+    }
+  }
+
+  return { articles: [] };
 }
 
 async function getExistingUrls(urls: string[]): Promise<Set<string>> {

@@ -77,6 +77,14 @@
       "password_hash": "$2a$10$EzqIyoeJxOBiy1IuWwfX9.Pii7QD/GvQX79LRUiEZpm9s2FRv6vxy",
       "created_at": "2026-04-29T18:47:47.071Z",
       "updated_at": "2026-04-29T18:47:47.071Z"
+    },
+    {
+      "id": "97103944-cd1c-4221-bc5d-51f763ac3c0b",
+      "email": "fayssal@g.com",
+      "username": "cs_go",
+      "password_hash": "$2a$10$4PsVE3hfGp5EpUZlhrGYguh.zV8xsa.iqH/B5raZLy9NJaFI1OlFW",
+      "created_at": "2026-04-30T00:11:55.120Z",
+      "updated_at": "2026-04-30T00:24:23.310Z"
     }
   ],
   "preferences": [
@@ -167,13 +175,58 @@
     },
     {
       "user_id": "8dd4acb4-a8c6-4596-bec1-8115586c226d",
+      "category_id": 4,
+      "created_at": "2026-04-29T22:58:37.009Z"
+    },
+    {
+      "user_id": "8dd4acb4-a8c6-4596-bec1-8115586c226d",
+      "category_id": 6,
+      "created_at": "2026-04-29T22:58:37.009Z"
+    },
+    {
+      "user_id": "8dd4acb4-a8c6-4596-bec1-8115586c226d",
+      "category_id": 5,
+      "created_at": "2026-04-29T22:58:37.009Z"
+    },
+    {
+      "user_id": "8dd4acb4-a8c6-4596-bec1-8115586c226d",
       "category_id": 7,
-      "created_at": "2026-04-29T18:50:51.862Z"
+      "created_at": "2026-04-29T22:58:37.009Z"
+    },
+    {
+      "user_id": "8dd4acb4-a8c6-4596-bec1-8115586c226d",
+      "category_id": 8,
+      "created_at": "2026-04-29T22:58:37.009Z"
+    },
+    {
+      "user_id": "8dd4acb4-a8c6-4596-bec1-8115586c226d",
+      "category_id": 1,
+      "created_at": "2026-04-29T22:58:37.009Z"
     },
     {
       "user_id": "8dd4acb4-a8c6-4596-bec1-8115586c226d",
       "category_id": 3,
-      "created_at": "2026-04-29T18:50:51.862Z"
+      "created_at": "2026-04-29T22:58:37.009Z"
+    },
+    {
+      "user_id": "8dd4acb4-a8c6-4596-bec1-8115586c226d",
+      "category_id": 2,
+      "created_at": "2026-04-29T22:58:37.009Z"
+    },
+    {
+      "user_id": "97103944-cd1c-4221-bc5d-51f763ac3c0b",
+      "category_id": 5,
+      "created_at": "2026-04-30T00:18:08.676Z"
+    },
+    {
+      "user_id": "97103944-cd1c-4221-bc5d-51f763ac3c0b",
+      "category_id": 8,
+      "created_at": "2026-04-30T00:18:08.676Z"
+    },
+    {
+      "user_id": "97103944-cd1c-4221-bc5d-51f763ac3c0b",
+      "category_id": 2,
+      "created_at": "2026-04-30T00:18:08.676Z"
     }
   ]
 }

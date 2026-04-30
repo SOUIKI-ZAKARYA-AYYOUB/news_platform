@@ -125,7 +125,7 @@ export function SignupStep4({
         </Button>
         <Button
           onClick={handleNext}
-          disabled={isLoading || selectedCategories.length === 0}
+          disabled={isLoading}
           className="flex-1"
         >
           {isLoading ? 'Creating Account...' : 'Complete Signup'}

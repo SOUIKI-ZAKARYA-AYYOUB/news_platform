@@ -30,6 +30,12 @@ export default function SigninPage() {
     setIsLoading(true);
     setError('');
 
+    if (!email.trim() || !password.trim()) {
+      setError('Email and password are required');
+      setIsLoading(false);
+      return;
+    }
+
     try {
       const response = await apiFetch('/api/auth/signin', {
         method: 'POST',
@@ -57,14 +63,6 @@ export default function SigninPage() {
       setIsLoading(false);
     }
   };
-
-  if (authLoading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-b from-background to-muted flex items-center justify-center p-4">
-        <p className="text-sm text-muted-foreground">Checking session...</p>
-      </div>
-    );
-  }
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-muted flex items-center justify-center p-4">
@@ -119,7 +117,7 @@ export default function SigninPage() {
 
             <Button
               type="submit"
-              disabled={isLoading || !email || !password}
+              disabled={isLoading}
               className="w-full"
             >
               {isLoading ? 'Signing in...' : 'Sign In'}

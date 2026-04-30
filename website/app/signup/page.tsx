@@ -99,14 +99,6 @@ export default function SignupPage() {
     }
   };
 
-  if (authLoading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-b from-background to-muted flex items-center justify-center p-4">
-        <p className="text-sm text-muted-foreground">Checking session...</p>
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen bg-gradient-to-b from-background to-muted flex items-center justify-center p-4">
       <Card className="w-full max-w-md">
