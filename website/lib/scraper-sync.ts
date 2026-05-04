@@ -32,7 +32,12 @@ type ScrapedArticle = {
 
 type ScrapedPayload = {
   articles?: ScrapedArticle[];
+  errors?: unknown[];
+  notes?: string[];
   scraped_at?: string;
+  sources?: Record<string, number>;
+  total_articles?: number;
+  window_hours?: number;
 };
 
 type StorySource = {
@@ -81,6 +86,16 @@ export type ScraperSyncResult = {
   skippedCount: number;
   payloadCount: number;
   sourceCounts: Record<string, number>;
+};
+
+export type ScraperRefreshResult = {
+  mode: 'local-json-refresh';
+  payloadCount: number;
+  storyCount: number;
+  sourceCounts: Record<string, number>;
+  errorsCount: number;
+  scrapedAt: string | null;
+  windowHours: number | null;
 };
 
 const SPORTS_SOURCES = new Set(['WINWIN', 'ELHEDDAF']);
@@ -325,7 +340,9 @@ function resolveCategoryIdForArticle(
 }
 
 function resolvePathFromCwd(targetPath: string) {
-  return path.isAbsolute(targetPath) ? targetPath : path.resolve(process.cwd(), targetPath);
+  return path.isAbsolute(targetPath)
+    ? targetPath
+    : path.resolve(/* turbopackIgnore: true */ process.cwd(), targetPath);
 }
 
 async function pathExists(targetPath: string) {
@@ -443,15 +460,59 @@ function normalizeScrapedPayload(raw: unknown): ScrapedPayload {
   if (raw && typeof raw === 'object') {
     const candidate = raw as ScrapedPayload & { items?: ScrapedArticle[] };
     if (Array.isArray(candidate.articles)) {
-      return { articles: candidate.articles, scraped_at: candidate.scraped_at };
+      return {
+        articles: candidate.articles,
+        errors: candidate.errors,
+        notes: candidate.notes,
+        scraped_at: candidate.scraped_at,
+        sources: candidate.sources,
+        total_articles: candidate.total_articles,
+        window_hours: candidate.window_hours
+      };
     }
 
     if (Array.isArray(candidate.items)) {
-      return { articles: candidate.items, scraped_at: candidate.scraped_at };
+      return {
+        articles: candidate.items,
+        errors: candidate.errors,
+        notes: candidate.notes,
+        scraped_at: candidate.scraped_at,
+        sources: candidate.sources,
+        total_articles: candidate.total_articles,
+        window_hours: candidate.window_hours
+      };
     }
   }
 
   return { articles: [] };
+}
+
+function countSourcesFromArticles(articles: ScrapedArticle[]): Record<string, number> {
+  const sourceCounts: Record<string, number> = {};
+
+  for (const article of articles) {
+    const source = (article.source || 'UNKNOWN').toUpperCase();
+    sourceCounts[source] = (sourceCounts[source] || 0) + 1;
+  }
+
+  return sourceCounts;
+}
+
+export async function refreshScraperFeed(): Promise<ScraperRefreshResult> {
+  await runScraperSystem();
+
+  const payload = await loadScrapedPayload();
+  const rawArticles = Array.isArray(payload.articles) ? payload.articles : [];
+
+  return {
+    mode: 'local-json-refresh',
+    payloadCount: rawArticles.length,
+    storyCount: payload.total_articles || rawArticles.length,
+    sourceCounts: payload.sources || countSourcesFromArticles(rawArticles),
+    errorsCount: Array.isArray(payload.errors) ? payload.errors.length : 0,
+    scrapedAt: payload.scraped_at || null,
+    windowHours: typeof payload.window_hours === 'number' ? payload.window_hours : null
+  };
 }
 
 async function getExistingUrls(urls: string[]): Promise<Set<string>> {
@@ -601,11 +662,7 @@ export async function syncArticlesFromScraper(options: { runScraper?: boolean } 
     insertedCount += chunk.length;
   }
 
-  const sourceCounts: Record<string, number> = {};
-  for (const article of rawArticles) {
-    const source = (article.source || 'UNKNOWN').toUpperCase();
-    sourceCounts[source] = (sourceCounts[source] || 0) + 1;
-  }
+  const sourceCounts = countSourcesFromArticles(rawArticles);
 
   return {
     syncedCount: insertedCount,

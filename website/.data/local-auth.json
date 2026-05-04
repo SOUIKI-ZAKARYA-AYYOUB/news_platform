@@ -85,6 +85,14 @@
       "password_hash": "$2a$10$4PsVE3hfGp5EpUZlhrGYguh.zV8xsa.iqH/B5raZLy9NJaFI1OlFW",
       "created_at": "2026-04-30T00:11:55.120Z",
       "updated_at": "2026-04-30T00:24:23.310Z"
+    },
+    {
+      "id": "b50aee2f-31a6-4b0e-b277-73d93e38cfb5",
+      "email": "mahdiyahya4242@gmail.com",
+      "username": "yahyamhd",
+      "password_hash": "$2a$10$UrVkInrCsu/440qtMFCRrO48/Nocfz/7.wbE26gBuuhh31SkoCd7K",
+      "created_at": "2026-04-30T08:51:30.315Z",
+      "updated_at": "2026-04-30T08:51:30.315Z"
     }
   ],
   "preferences": [
@@ -227,6 +235,16 @@
       "user_id": "97103944-cd1c-4221-bc5d-51f763ac3c0b",
       "category_id": 2,
       "created_at": "2026-04-30T00:18:08.676Z"
+    },
+    {
+      "user_id": "b50aee2f-31a6-4b0e-b277-73d93e38cfb5",
+      "category_id": 3,
+      "created_at": "2026-04-30T08:51:31.682Z"
+    },
+    {
+      "user_id": "b50aee2f-31a6-4b0e-b277-73d93e38cfb5",
+      "category_id": 8,
+      "created_at": "2026-04-30T08:51:31.682Z"
     }
   ]
 }

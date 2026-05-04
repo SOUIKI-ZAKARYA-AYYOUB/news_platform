@@ -1,12 +1,13 @@
 'use client';
 
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Header } from '@/components/dashboard/Header';
 import { ArticleCard } from '@/components/dashboard/ArticleCard';
 import { Article, Category } from '@/lib/supabase';
 import { useAuth } from '@/context/AuthContext';
 import { Button } from '@/components/ui/button';
 import { apiFetch } from '@/lib/api';
+import { ProjectStatusPanel } from '@/components/project/ProjectStatusPanel';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -16,6 +17,10 @@ import {
 import Link from 'next/link';
 
 const ARTICLES_STEP = 15;
+
+function getSummaryInput(article: Article): string {
+  return article.description || article.content || article.summary || '';
+}
 
 export default function DashboardPage() {
   const { user, isLoading: authLoading } = useAuth();
@@ -27,6 +32,42 @@ export default function DashboardPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState('');
   const loadMoreRef = useRef<HTMLDivElement | null>(null);
+  const [summaryMap, setSummaryMap] = useState<Map<number, string>>(new Map());
+
+  const fetchData = useCallback(async () => {
+    setError('');
+    setIsLoading(true);
+
+    try {
+      // Fetch categories
+      const categoriesResponse = await apiFetch('/api/categories?usedOnly=1');
+      if (categoriesResponse.ok) {
+        const categoriesData = await categoriesResponse.json();
+        const categoryMap = new Map<number, string>();
+        (categoriesData.categories || []).forEach((cat: Category) => {
+          categoryMap.set(cat.id, cat.name);
+        });
+        setCategories(categoryMap);
+      }
+
+      // Fetch articles
+      const articlesResponse = await apiFetch('/api/articles');
+      const articlesData = await articlesResponse.json();
+      if (articlesData.articles) {
+        setArticles(articlesData.articles);
+        setSelectedCategoryId(null);
+        setVisibleCount(ARTICLES_STEP);
+        setSummaryMap(new Map());
+      } else {
+        setError(articlesData.message || 'No articles found');
+      }
+    } catch (error) {
+      console.error('Failed to fetch data:', error);
+      setError('Failed to load content');
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
 
   const articleCountByCategory = useMemo(() => {
     const counts = new Map<number, number>();
@@ -67,39 +108,9 @@ export default function DashboardPage() {
 
   const visibleArticles = filteredArticles.slice(0, visibleCount);
   const hasMoreArticles = visibleCount < filteredArticles.length;
+  const visibleArticleIds = visibleArticles.map((article) => article.id).join(',');
 
   useEffect(() => {
-    const fetchData = async () => {
-      try {
-        // Fetch categories
-        const categoriesResponse = await apiFetch('/api/categories?usedOnly=1');
-        if (categoriesResponse.ok) {
-          const categoriesData = await categoriesResponse.json();
-          const categoryMap = new Map<number, string>();
-          (categoriesData.categories || []).forEach((cat: Category) => {
-            categoryMap.set(cat.id, cat.name);
-          });
-          setCategories(categoryMap);
-        }
-
-        // Fetch articles
-        const articlesResponse = await apiFetch('/api/articles');
-        const articlesData = await articlesResponse.json();
-        if (articlesData.articles) {
-          setArticles(articlesData.articles);
-          setSelectedCategoryId(null);
-          setVisibleCount(ARTICLES_STEP);
-        } else {
-          setError(articlesData.message || 'No articles found');
-        }
-      } catch (error) {
-        console.error('Failed to fetch data:', error);
-        setError('Failed to load content');
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
     if (user) {
       fetchData();
       return;
@@ -108,7 +119,7 @@ export default function DashboardPage() {
     if (!authLoading) {
       fetchData();
     }
-  }, [user, authLoading]);
+  }, [user, authLoading, fetchData]);
 
   useEffect(() => {
     setVisibleCount(ARTICLES_STEP);
@@ -140,6 +151,63 @@ export default function DashboardPage() {
       observer.disconnect();
     };
   }, [filteredArticles.length, hasMoreArticles]);
+
+  useEffect(() => {
+    const uncachedArticles = visibleArticles.filter((article) => {
+      return getSummaryInput(article) && !summaryMap.has(article.id);
+    });
+
+    if (uncachedArticles.length === 0) {
+      return;
+    }
+
+    let cancelled = false;
+
+    async function summarizeVisibleArticles() {
+      for (let index = 0; index < uncachedArticles.length; index += 1) {
+        if (cancelled) {
+          break;
+        }
+
+        const article = uncachedArticles[index];
+        const description = article ? getSummaryInput(article) : '';
+
+        if (!article || !description) {
+          continue;
+        }
+
+        try {
+          const response = await fetch('/api/summarize', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ description }),
+          });
+          const data = (await response.json()) as {
+            summary?: string | null;
+            summaries?: Array<string | null>;
+          };
+          const summary = data.summary ?? data.summaries?.[0] ?? null;
+
+          if (summary?.trim() && !cancelled) {
+            setSummaryMap((current) => new Map(current).set(article.id, summary.trim()));
+          }
+        } catch {
+          // ArticleCard already renders a local extractive summary while AI is unavailable.
+        }
+
+        if (index < uncachedArticles.length - 1 && !cancelled) {
+          await new Promise((resolve) => setTimeout(resolve, 800));
+        }
+      }
+    }
+
+    summarizeVisibleArticles();
+
+    return () => {
+      cancelled = true;
+    };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [visibleArticleIds]);
 
   if (authLoading || isLoading) {
     return (
@@ -203,6 +271,8 @@ export default function DashboardPage() {
           </div>
         </div>
 
+        <ProjectStatusPanel compact className="mb-8" onRefreshComplete={fetchData} />
+
         {error ? (
           <div className="text-center py-12">
             <p className="text-red-500 mb-4">{error}</p>
@@ -236,6 +306,7 @@ export default function DashboardPage() {
                   key={article.id}
                   article={article}
                   categoryName={categories.get(article.category_id)}
+                  aiSummary={summaryMap.get(article.id)}
                 />
               ))}
             </div>
