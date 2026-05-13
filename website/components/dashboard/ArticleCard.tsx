@@ -149,9 +149,10 @@ interface ArticleCardProps {
   article: Article;
   categoryName?: string;
   aiSummary?: string;
+  onRequestSummary?: () => void;
 }
 
-export function ArticleCard({ article, categoryName, aiSummary }: ArticleCardProps) {
+export function ArticleCard({ article, categoryName, aiSummary, onRequestSummary }: ArticleCardProps) {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [whyItMatters, setWhyItMatters] = useState<string | null>(null);
   const [loadingAnalysis, setLoadingAnalysis] = useState(false);
@@ -233,6 +234,7 @@ export function ArticleCard({ article, categoryName, aiSummary }: ArticleCardPro
     if (event.key !== 'Enter' && event.key !== ' ') return;
     event.preventDefault();
     setDialogOpen(true);
+    if (!aiSummary) onRequestSummary?.();
   }
 
   return (
@@ -245,7 +247,10 @@ export function ArticleCard({ article, categoryName, aiSummary }: ArticleCardPro
                    hover:shadow-xl hover:shadow-primary/5
                    hover:-translate-y-0.5
                    transition-all duration-300 ease-out"
-        onClick={() => setDialogOpen(true)}
+        onClick={() => {
+          setDialogOpen(true);
+          if (!aiSummary) onRequestSummary?.();
+        }}
         onKeyDown={handleCardKeyDown}
         role="button"
         tabIndex={0}

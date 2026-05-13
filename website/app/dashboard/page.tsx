@@ -24,10 +24,13 @@ import {
   Newspaper,
   RefreshCcw,
   Settings,
+  Sparkles,
   Zap,
 } from 'lucide-react';
 
 const ARTICLES_STEP = 15;
+const REFRESH_COOLDOWN_MS = 30 * 60 * 1000; // 30 minutes between manual refreshes
+const AUTO_REFRESH_INTERVAL_MS = 2 * 60 * 60 * 1000; // 2 hours
 
 const CATEGORY_ICONS: Record<string, string> = {
   Politics: '',
@@ -72,6 +75,18 @@ export default function DashboardPage() {
   const [scrapeStatus, setScrapeStatus] = useState<'idle' | 'scraping' | 'done' | 'error'>('idle');
   const [lastScrapeTime, setLastScrapeTime] = useState<string | null>(null);
   const autoScrapeTriggered = useRef(false);
+  const [lastRefreshTime, setLastRefreshTime] = useState<number>(() => {
+    if (typeof window !== 'undefined') {
+      return Number(localStorage.getItem('newsly_last_refresh') || '0');
+    }
+    return 0;
+  });
+  const [now, setNow] = useState(Date.now());
+  const [summarizingCategory, setSummarizingCategory] = useState(false);
+  const [categoryDigest, setCategoryDigest] = useState<string | null>(null);
+  const cooldownRemaining = Math.max(0, REFRESH_COOLDOWN_MS - (now - lastRefreshTime));
+  const canRefresh = cooldownRemaining === 0 && scrapeStatus !== 'scraping';
+  const cooldownMinutes = Math.ceil(cooldownRemaining / 60000);
 
   // ─── Auto-scrape on dashboard load ───
   const triggerAutoScrape = useCallback(async () => {
@@ -135,8 +150,18 @@ export default function DashboardPage() {
     }
   }, []);
 
-  // Manual refresh handler
+  // Manual refresh handler (30-minute cooldown)
   const handleManualRefresh = useCallback(async () => {
+    const elapsed = Date.now() - lastRefreshTime;
+    if (elapsed < REFRESH_COOLDOWN_MS || scrapeStatus === 'scraping') return;
+
+    const refreshTime = Date.now();
+    setLastRefreshTime(refreshTime);
+    setNow(refreshTime);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('newsly_last_refresh', String(refreshTime));
+    }
+
     autoScrapeTriggered.current = false;
     setScrapeStatus('scraping');
     try {
@@ -153,7 +178,7 @@ export default function DashboardPage() {
     } catch {
       setScrapeStatus('error');
     }
-  }, [fetchData]);
+  }, [fetchData, lastRefreshTime, scrapeStatus]);
 
   const articleCountByCategory = useMemo(() => {
     const counts = new Map<number, number>();
@@ -191,7 +216,86 @@ export default function DashboardPage() {
 
   const visibleArticles = filteredArticles.slice(0, visibleCount);
   const hasMoreArticles = visibleCount < filteredArticles.length;
-  const visibleArticleIds = visibleArticles.map((article) => article.id).join(',');
+
+  // ─── On-demand article summarization (only when clicked) ───
+  const handleSummarizeArticle = useCallback(async (article: Article) => {
+    if (summaryMap.has(article.id)) return;
+    const description = getSummaryInput(article);
+    if (!description) return;
+
+    const titleText = article.neutral_headline || article.title || description;
+    const arabicChars = (titleText.match(/[\u0600-\u06FF]/g) || []).length;
+    const latinChars = (titleText.match(/[a-zA-Z\u00C0-\u024F]/g) || []).length;
+    let language = 'English';
+    if (arabicChars > latinChars) language = 'Arabic';
+    else if (/[àâäéèêëïîôùûüÿçœæ]|(?:qu'|l'|d'|n'|c'|j'|s')/i.test(titleText)) language = 'French';
+
+    try {
+      const response = await fetch('/api/summarize', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ description, language }),
+      });
+      const data = (await response.json()) as { summary?: string | null; summaries?: Array<string | null> };
+      const summary = data.summary ?? data.summaries?.[0] ?? null;
+      if (summary?.trim()) {
+        setSummaryMap((cur) => new Map(cur).set(article.id, summary.trim()));
+      }
+    } catch { /* ArticleCard uses extractive fallback */ }
+  }, [summaryMap]);
+
+  // ─── Generate a unified digest for all articles in selected category ───
+  const handleSummarizeCategory = useCallback(async () => {
+    if (filteredArticles.length === 0) return;
+
+    setSummarizingCategory(true);
+    setCategoryDigest(null);
+
+    // Detect dominant language from articles
+    let arabicCount = 0;
+    let frenchCount = 0;
+    const snippets = filteredArticles.slice(0, 50).map((a) => {
+      const titleText = a.neutral_headline || a.title || '';
+      const arabicChars = (titleText.match(/[\u0600-\u06FF]/g) || []).length;
+      const latinChars = (titleText.match(/[a-zA-Z\u00C0-\u024F]/g) || []).length;
+      if (arabicChars > latinChars) arabicCount++;
+      else if (/[\u00e0\u00e2\u00e4\u00e9\u00e8\u00ea\u00eb\u00ef\u00ee\u00f4\u00f9\u00fb\u00fc\u00ff\u00e7\u0153\u00e6]|(?:qu'|l'|d'|n'|c'|j'|s')/i.test(titleText)) frenchCount++;
+      return {
+        title: titleText,
+        summary: (a.description || a.content || a.summary || '').slice(0, 200),
+        category: categories.get(a.category_id) || '',
+      };
+    });
+
+    let language = 'English';
+    if (arabicCount > snippets.length / 2) language = 'Arabic';
+    else if (frenchCount > snippets.length / 3) language = 'French';
+
+    const categoryName = selectedCategoryId !== null
+      ? categories.get(selectedCategoryId) || 'Category'
+      : undefined;
+
+    try {
+      const response = await fetch('/api/summarize-digest', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ articles: snippets, language, category: categoryName }),
+      });
+      const data = await response.json();
+      if (data.digest) {
+        setCategoryDigest(data.digest);
+      }
+    } catch {
+      console.error('Digest generation failed');
+    } finally {
+      setSummarizingCategory(false);
+    }
+  }, [filteredArticles, categories, selectedCategoryId]);
+
+  // Clear digest when category changes
+  useEffect(() => {
+    setCategoryDigest(null);
+  }, [selectedCategoryId]);
 
   // Initial data load
   useEffect(() => {
@@ -225,54 +329,37 @@ export default function DashboardPage() {
     return () => observer.disconnect();
   }, [filteredArticles.length, hasMoreArticles]);
 
-  // AI Summaries
+  // ─── Cooldown countdown timer ───
   useEffect(() => {
-    const uncachedArticles = visibleArticles.filter(
-      (article) => getSummaryInput(article) && !summaryMap.has(article.id)
-    );
+    if (cooldownRemaining <= 0) return;
+    const timer = setInterval(() => setNow(Date.now()), 15000);
+    return () => clearInterval(timer);
+  }, [cooldownRemaining > 0]); // eslint-disable-line react-hooks/exhaustive-deps
 
-    if (uncachedArticles.length === 0) return;
-
-    let cancelled = false;
-
-    async function summarizeVisibleArticles() {
-      for (let i = 0; i < uncachedArticles.length; i++) {
-        if (cancelled) break;
-        const article = uncachedArticles[i];
-        const description = article ? getSummaryInput(article) : '';
-        if (!article || !description) continue;
-
-        // Detect language from title
-        const titleText = article.neutral_headline || article.title || description;
-        const arabicChars = (titleText.match(/[\u0600-\u06FF]/g) || []).length;
-        const latinChars = (titleText.match(/[a-zA-Z\u00C0-\u024F]/g) || []).length;
-        let language = 'English';
-        if (arabicChars > latinChars) language = 'Arabic';
-        else if (/[àâäéèêëïîôùûüÿçœæ]|(?:qu'|l'|d'|n'|c'|j'|s')/i.test(titleText)) language = 'French';
-
-        try {
-          const response = await fetch('/api/summarize', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ description, language }),
-          });
-          const data = (await response.json()) as { summary?: string | null; summaries?: Array<string | null> };
-          const summary = data.summary ?? data.summaries?.[0] ?? null;
-          if (summary?.trim() && !cancelled) {
-            setSummaryMap((cur) => new Map(cur).set(article.id, summary.trim()));
-          }
-        } catch { /* ArticleCard uses extractive fallback */ }
-
-        if (i < uncachedArticles.length - 1 && !cancelled) {
-          await new Promise((r) => setTimeout(r, 800));
+  // ─── Auto-refresh every 2 hours ───
+  useEffect(() => {
+    const interval = setInterval(async () => {
+      autoScrapeTriggered.current = false;
+      setScrapeStatus('scraping');
+      try {
+        const response = await fetch('/api/scrape', { method: 'POST' });
+        const data = await response.json();
+        if (data.status === 'completed') {
+          setScrapeStatus('done');
+          setLastScrapeTime(data.timestamp || new Date().toISOString());
+          await fetchData();
+        } else if (data.status === 'skipped') {
+          setScrapeStatus('done');
+          setLastScrapeTime(data.lastScrapeAt || null);
+        } else {
+          setScrapeStatus('error');
         }
+      } catch {
+        setScrapeStatus('error');
       }
-    }
-
-    summarizeVisibleArticles();
-    return () => { cancelled = true; };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [visibleArticleIds]);
+    }, AUTO_REFRESH_INTERVAL_MS);
+    return () => clearInterval(interval);
+  }, [fetchData]);
 
   // ─── Loading state ───
   if (authLoading || isLoading) {
@@ -339,10 +426,12 @@ export default function DashboardPage() {
               size="sm"
               className="ml-auto shrink-0 gap-1.5"
               onClick={handleManualRefresh}
-              disabled={scrapeStatus === 'scraping'}
+              disabled={!canRefresh}
             >
               <RefreshCcw className={`size-3.5 ${scrapeStatus === 'scraping' ? 'animate-spin' : ''}`} />
-              Refresh
+              {!canRefresh && cooldownRemaining > 0
+                ? `${cooldownMinutes}m`
+                : 'Refresh'}
             </Button>
           </div>
         )}
@@ -447,6 +536,61 @@ export default function DashboardPage() {
           </div>
         </div>
 
+        {/* ─── AI Digest Section ─── */}
+        {filteredArticles.length > 0 && (
+          <div className="mb-6">
+            {/* Digest card */}
+            {categoryDigest && (
+              <div className="mb-4 rounded-2xl border border-primary/20 bg-primary/5 p-5 relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-40 h-40 bg-primary/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
+                <div className="relative">
+                  <div className="flex items-center gap-2 mb-3">
+                    <div className="size-8 rounded-lg bg-primary/15 flex items-center justify-center">
+                      <Sparkles className="size-4 text-primary" />
+                    </div>
+                    <div>
+                      <p className="text-sm font-semibold text-foreground">
+                        AI News Digest
+                        {selectedCategoryId !== null && (
+                          <span className="text-primary ml-1.5">· {categories.get(selectedCategoryId)}</span>
+                        )}
+                      </p>
+                      <p className="text-[10px] text-muted-foreground">
+                        {filteredArticles.length} stories analyzed by AI
+                      </p>
+                    </div>
+                  </div>
+                  <p className="text-sm text-foreground/85 leading-relaxed whitespace-pre-line">
+                    {categoryDigest}
+                  </p>
+                </div>
+              </div>
+            )}
+
+            <Button
+              variant="outline"
+              size="sm"
+              className="gap-1.5 border-primary/30 text-primary hover:bg-primary/10"
+              onClick={handleSummarizeCategory}
+              disabled={summarizingCategory}
+            >
+              {summarizingCategory ? (
+                <>
+                  <Loader2 className="size-3.5 animate-spin" />
+                  Generating digest...
+                </>
+              ) : (
+                <>
+                  <Sparkles className="size-3.5" />
+                  {categoryDigest ? 'Regenerate' : 'AI Summarize'} {selectedCategoryId !== null
+                    ? categories.get(selectedCategoryId) || 'Category'
+                    : 'All Stories'} ({filteredArticles.length})
+                </>
+              )}
+            </Button>
+          </div>
+        )}
+
         {/* ─── Project Status Panel ─── */}
         <ProjectStatusPanel compact className="mb-8" onRefreshComplete={fetchData} />
 
@@ -502,6 +646,7 @@ export default function DashboardPage() {
                   article={article}
                   categoryName={categories.get(article.category_id)}
                   aiSummary={summaryMap.get(article.id)}
+                  onRequestSummary={() => handleSummarizeArticle(article)}
                 />
               ))}
             </div>
