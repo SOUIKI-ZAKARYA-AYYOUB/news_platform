@@ -28,21 +28,29 @@ export async function GET(request: NextRequest) {
     const session = await getSession();
 
     if (!isSupabaseConfigured) {
+      // In local mode, read directly from scraped JSON
+      const publicArticles = await getScrapedArticlesForPublicFeed(null);
+
       if (!session) {
-        const publicArticles = await getScrapedArticlesForPublicFeed(requestedLimit);
-        return NextResponse.json({ articles: publicArticles }, { status: 200 });
+        // Unauthenticated users: show all articles
+        const limitedArticles =
+          requestedLimit === null ? publicArticles : publicArticles.slice(0, requestedLimit);
+        return NextResponse.json({ articles: limitedArticles }, { status: 200 });
       }
 
+      // Authenticated users: filter by preferences, but fallback to all if no preferences set
       const preferredCategoryIds = await getUserPreferences(session.userId);
 
       if (preferredCategoryIds.length === 0) {
+        // No preferences → show ALL articles instead of an empty screen
+        const limitedArticles =
+          requestedLimit === null ? publicArticles : publicArticles.slice(0, requestedLimit);
         return NextResponse.json(
-          { articles: [], message: 'No category preferences selected' },
+          { articles: limitedArticles, allCategories: true },
           { status: 200 }
         );
       }
 
-      const publicArticles = await getScrapedArticlesForPublicFeed(null);
       const filteredPublicArticles = publicArticles.filter((article) =>
         preferredCategoryIds.includes(article.category_id)
       );
@@ -62,8 +70,10 @@ export async function GET(request: NextRequest) {
     const categoryIds = await getUserPreferences(session.userId);
 
     if (categoryIds.length === 0) {
+      // No preferences → fallback to public feed (all articles) instead of empty
+      const publicArticles = await getScrapedArticlesForPublicFeed(requestedLimit);
       return NextResponse.json(
-        { articles: [], message: 'No category preferences selected' },
+        { articles: publicArticles, allCategories: true },
         { status: 200 }
       );
     }
@@ -113,6 +123,18 @@ export async function GET(request: NextRequest) {
       } catch (syncError) {
         console.error('On-demand scraper sync failed:', syncError);
       }
+    }
+
+    // If still empty after sync, fallback to scraped JSON
+    if (articles.length === 0) {
+      const publicArticles = await getScrapedArticlesForPublicFeed(requestedLimit);
+      const filteredArticles = publicArticles.filter((article) =>
+        categoryIds.includes(article.category_id)
+      );
+      return NextResponse.json(
+        { articles: filteredArticles.length > 0 ? filteredArticles : publicArticles, allCategories: filteredArticles.length === 0 },
+        { status: 200 }
+      );
     }
 
     return NextResponse.json({ articles }, { status: 200 });

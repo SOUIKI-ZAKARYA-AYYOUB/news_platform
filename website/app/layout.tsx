@@ -1,15 +1,24 @@
 import type { Metadata } from 'next'
-import { Geist, Geist_Mono } from 'next/font/google'
+import { Inter, Geist_Mono } from 'next/font/google'
 import { Analytics } from '@vercel/analytics/next'
 import { RootLayoutClient } from './RootLayoutClient'
 import './globals.css'
 
-const _geist = Geist({ subsets: ["latin"] });
-const _geistMono = Geist_Mono({ subsets: ["latin"] });
+const inter = Inter({
+  subsets: ['latin'],
+  variable: '--font-sans',
+  display: 'swap',
+});
+
+const geistMono = Geist_Mono({
+  subsets: ['latin'],
+  variable: '--font-mono',
+  display: 'swap',
+});
 
 export const metadata: Metadata = {
-  title: 'Newsly - Personalized News Feed',
-  description: 'Get news recommendations based on your interests and preferred categories',
+  title: 'Newsly — AI-Powered News Intelligence',
+  description: 'Multi-source news aggregation with AI clustering, bias reduction, and personalized feeds. Powered by 7+ scrapers, TF-IDF embeddings, and neutral headline rewriting.',
   icons: {
     icon: [
       {
@@ -35,8 +44,8 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en">
-      <body className="font-sans antialiased">
+    <html lang="en" className="dark" data-scroll-behavior="smooth" suppressHydrationWarning>
+      <body className={`${inter.variable} ${geistMono.variable} font-sans antialiased`}>
         <RootLayoutClient>
           {children}
         </RootLayoutClient>

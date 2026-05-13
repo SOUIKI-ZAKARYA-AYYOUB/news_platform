@@ -10,11 +10,12 @@ import { SignupStep4 } from '@/components/auth/SignupStep4';
 import { Card } from '@/components/ui/card';
 import { useAuth } from '@/context/AuthContext';
 import { apiFetch } from '@/lib/api';
+import { Newspaper } from 'lucide-react';
 
 export default function SignupPage() {
   const router = useRouter();
   const { setUser, isSignedIn, isLoading: authLoading } = useAuth();
-  
+
   const [currentStep, setCurrentStep] = useState(1);
   const [email, setEmail] = useState('');
   const [username, setUsername] = useState('');
@@ -100,18 +101,42 @@ export default function SignupPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background to-muted flex items-center justify-center p-4">
-      <Card className="w-full max-w-md">
+    <div className="min-h-screen gradient-bg flex items-center justify-center p-4 relative overflow-hidden">
+      {/* Background decorative orbs */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none" aria-hidden="true">
+        <div className="absolute -top-40 -left-40 size-[500px] rounded-full bg-primary/5 blur-3xl" />
+        <div className="absolute bottom-20 -right-40 size-[400px] rounded-full bg-chart-2/5 blur-3xl" />
+      </div>
+
+      <Card className="relative w-full max-w-md border-border/40 bg-card/80 backdrop-blur-xl shadow-2xl shadow-primary/5">
         <div className="p-8">
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold text-foreground">Newsly</h1>
-            <p className="text-sm text-muted-foreground">
-              Your personalized news feed
-            </p>
+          <div className="text-center mb-6">
+            <Link href="/" className="inline-flex items-center gap-2.5 mb-5">
+              <div className="size-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                <Newspaper className="size-5 text-primary" />
+              </div>
+              <span className="text-2xl font-bold gradient-text">Newsly</span>
+            </Link>
+          </div>
+
+          {/* Step indicator */}
+          <div className="flex items-center justify-center gap-2 mb-6">
+            {[1, 2, 3, 4].map((step) => (
+              <div
+                key={step}
+                className={`h-1.5 rounded-full transition-all duration-300 ${
+                  step === currentStep
+                    ? 'w-8 bg-primary'
+                    : step < currentStep
+                    ? 'w-4 bg-primary/40'
+                    : 'w-4 bg-border'
+                }`}
+              />
+            ))}
           </div>
 
           {error && (
-            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-6">
+            <div className="bg-destructive/10 border border-destructive/20 text-destructive-foreground px-4 py-3 rounded-xl mb-6 text-sm">
               {error}
             </div>
           )}
@@ -164,7 +189,7 @@ export default function SignupPage() {
               Already have an account?{' '}
               <Link
                 href="/signin"
-                className="text-primary hover:underline font-medium"
+                className="text-primary hover:text-primary/80 font-semibold transition-colors"
               >
                 Sign in
               </Link>

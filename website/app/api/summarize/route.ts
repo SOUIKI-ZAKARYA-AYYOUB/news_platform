@@ -18,6 +18,7 @@ type GroqResponse = {
 type SummarizeBody = {
   description?: unknown;
   descriptions?: unknown;
+  language?: unknown;
 };
 
 function delay(ms: number) {
@@ -31,9 +32,14 @@ function normalizeSummary(value: string): string {
     .trim();
 }
 
-async function summarizeOne(description: string, apiKey: string): Promise<string | null> {
+async function summarizeOne(description: string, apiKey: string, language?: string): Promise<string | null> {
+  const langInstruction = language
+    ? `You MUST reply in ${language}. `
+    : 'Reply in the same language as the article. ';
+
   const prompt =
     'Write ONE summary sentence of MAXIMUM 12 words for this news article. ' +
+    langInstruction +
     'Reply with ONLY the sentence, no extra text:\n\n' +
     description.slice(0, 800);
 
@@ -90,10 +96,12 @@ export async function POST(req: NextRequest) {
   }
 
   let descriptions: string[] | null;
+  let language: string | undefined;
 
   try {
     const body = (await req.json()) as SummarizeBody;
     descriptions = getDescriptions(body);
+    language = typeof body.language === 'string' ? body.language.trim() || undefined : undefined;
   } catch {
     return NextResponse.json({ error: 'Invalid JSON.' }, { status: 400 });
   }
@@ -117,7 +125,7 @@ export async function POST(req: NextRequest) {
       await delay(700);
     }
 
-    const summary = await summarizeOne(description, apiKey);
+    const summary = await summarizeOne(description, apiKey, language);
     madeLiveRequest = true;
 
     if (summary) {

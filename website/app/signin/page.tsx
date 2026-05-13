@@ -9,11 +9,12 @@ import { Card } from '@/components/ui/card';
 import { FieldGroup, FieldLabel } from '@/components/ui/field';
 import { useAuth } from '@/context/AuthContext';
 import { apiFetch } from '@/lib/api';
+import { ArrowRight, Lock, Mail, Newspaper } from 'lucide-react';
 
 export default function SigninPage() {
   const router = useRouter();
   const { setUser, isSignedIn, isLoading: authLoading } = useAuth();
-  
+
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -65,62 +66,76 @@ export default function SigninPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background to-muted flex items-center justify-center p-4">
-      <Card className="w-full max-w-md">
-        <div className="p-8">
-          <div className="mb-8">
-            <h1 className="text-3xl font-bold text-foreground">Newsly</h1>
-            <p className="text-sm text-muted-foreground">
-              Your personalized news feed
-            </p>
-          </div>
+    <div className="min-h-screen gradient-bg flex items-center justify-center p-4 relative overflow-hidden">
+      {/* Background decorative orbs */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none" aria-hidden="true">
+        <div className="absolute -top-40 -right-40 size-[500px] rounded-full bg-primary/5 blur-3xl" />
+        <div className="absolute bottom-20 -left-40 size-[400px] rounded-full bg-chart-5/5 blur-3xl" />
+      </div>
 
-          <div className="mb-6">
-            <h2 className="text-2xl font-bold text-foreground">Sign In</h2>
-            <p className="text-sm text-muted-foreground mt-2">
-              Welcome back! Sign in to your account
+      <Card className="relative w-full max-w-md border-border/40 bg-card/80 backdrop-blur-xl shadow-2xl shadow-primary/5">
+        <div className="p-8">
+          <div className="text-center mb-8">
+            <Link href="/" className="inline-flex items-center gap-2.5 mb-6">
+              <div className="size-10 rounded-xl bg-primary/10 flex items-center justify-center">
+                <Newspaper className="size-5 text-primary" />
+              </div>
+              <span className="text-2xl font-bold gradient-text">Newsly</span>
+            </Link>
+            <h2 className="text-2xl font-bold text-foreground">Welcome back</h2>
+            <p className="text-sm text-muted-foreground mt-1.5">
+              Sign in to access your personalized feed
             </p>
           </div>
 
           {error && (
-            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-6">
+            <div className="bg-destructive/10 border border-destructive/20 text-destructive-foreground px-4 py-3 rounded-xl mb-6 text-sm">
               {error}
             </div>
           )}
 
           <form onSubmit={handleSignin} className="space-y-4">
             <FieldGroup>
-              <FieldLabel htmlFor="email">Email Address</FieldLabel>
-              <Input
-                id="email"
-                type="email"
-                placeholder="you@example.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                disabled={isLoading}
-                required
-              />
+              <FieldLabel htmlFor="email" className="text-sm font-medium">Email Address</FieldLabel>
+              <div className="relative">
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="you@example.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  disabled={isLoading}
+                  required
+                  className="pl-10 h-11 border-border/50 focus:border-primary"
+                />
+              </div>
             </FieldGroup>
 
             <FieldGroup>
-              <FieldLabel htmlFor="password">Password</FieldLabel>
-              <Input
-                id="password"
-                type="password"
-                placeholder="Enter your password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                disabled={isLoading}
-                required
-              />
+              <FieldLabel htmlFor="password" className="text-sm font-medium">Password</FieldLabel>
+              <div className="relative">
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 size-4 text-muted-foreground" />
+                <Input
+                  id="password"
+                  type="password"
+                  placeholder="Enter your password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  disabled={isLoading}
+                  required
+                  className="pl-10 h-11 border-border/50 focus:border-primary"
+                />
+              </div>
             </FieldGroup>
 
             <Button
               type="submit"
               disabled={isLoading}
-              className="w-full"
+              className="w-full h-11 bg-primary hover:bg-primary/90 shadow-md shadow-primary/20 text-base"
             >
               {isLoading ? 'Signing in...' : 'Sign In'}
+              {!isLoading && <ArrowRight className="size-4 ml-2" />}
             </Button>
           </form>
 
@@ -129,7 +144,7 @@ export default function SigninPage() {
               Don&apos;t have an account?{' '}
               <Link
                 href="/signup"
-                className="text-primary hover:underline font-medium"
+                className="text-primary hover:text-primary/80 font-semibold transition-colors"
               >
                 Sign up
               </Link>
