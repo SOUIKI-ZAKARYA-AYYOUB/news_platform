@@ -6,19 +6,29 @@ const DEFAULT_HEADERS = {
   "accept-language": "fr-FR,fr;q=0.9,en;q=0.8"
 };
 
+const FETCH_TIMEOUT_MS = 30_000;
+
 export async function fetchText(url, options = {}) {
-  const response = await fetch(url, {
-    redirect: "follow",
-    ...options,
-    headers: {
-      ...DEFAULT_HEADERS,
-      ...(options.headers ?? {})
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
+
+  try {
+    const response = await fetch(url, {
+      redirect: "follow",
+      signal: controller.signal,
+      ...options,
+      headers: {
+        ...DEFAULT_HEADERS,
+        ...(options.headers ?? {})
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error(`Request failed (${response.status}) for ${url}`);
     }
-  });
 
-  if (!response.ok) {
-    throw new Error(`Request failed (${response.status}) for ${url}`);
+    return response.text();
+  } finally {
+    clearTimeout(timer);
   }
-
-  return response.text();
 }
