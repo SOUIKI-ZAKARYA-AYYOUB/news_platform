@@ -114,7 +114,8 @@ export async function POST(req: NextRequest) {
   let madeLiveRequest = false;
 
   for (const description of descriptions) {
-    const cached = cache.get(description);
+    const cacheKey = `${language || 'auto'}:${description}`;
+    const cached = cache.get(cacheKey);
 
     if (cached) {
       results.push(cached);
@@ -129,7 +130,7 @@ export async function POST(req: NextRequest) {
     madeLiveRequest = true;
 
     if (summary) {
-      cache.set(description, summary);
+      cache.set(cacheKey, summary);
     }
 
     results.push(summary);

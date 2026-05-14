@@ -12,6 +12,8 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { useAuth } from '@/context/AuthContext';
 import { LogOut, Menu, Newspaper, Settings, User } from 'lucide-react';
+import { ThemeToggle } from '@/components/ThemeToggle';
+import { useTranslation } from '@/context/I18nContext';
 
 interface HeaderProps {
   newsCount?: number;
@@ -20,10 +22,11 @@ interface HeaderProps {
 export function Header({ newsCount }: HeaderProps) {
   const router = useRouter();
   const { user, logout } = useAuth();
+  const { t } = useTranslation();
 
   const handleLogout = async () => {
     await logout();
-    router.replace('/signin');
+    router.replace('/');
     router.refresh();
   };
 
@@ -34,10 +37,12 @@ export function Header({ newsCount }: HeaderProps) {
           <div className="size-9 rounded-xl bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
             <Newspaper className="size-4.5 text-primary" />
           </div>
-          <span className="text-xl font-bold tracking-tight gradient-text">Newsly</span>
+          <span className="text-xl font-bold tracking-tight gradient-text">{t('common.appName')}</span>
         </Link>
 
         <div className="flex items-center gap-3">
+          <ThemeToggle />
+
           {typeof newsCount === 'number' && (
             <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-primary/8 text-sm">
               <span className="text-muted-foreground">Stories:</span>
@@ -66,7 +71,7 @@ export function Header({ newsCount }: HeaderProps) {
                   <DropdownMenuItem asChild>
                     <Link href="/dashboard/preferences" className="flex items-center gap-2">
                       <Settings className="size-4" />
-                      My Preferences
+                      {t('common.preferences')}
                     </Link>
                   </DropdownMenuItem>
                   <DropdownMenuItem asChild>
@@ -81,7 +86,7 @@ export function Header({ newsCount }: HeaderProps) {
                     className="flex items-center gap-2 text-destructive-foreground focus:text-destructive-foreground"
                   >
                     <LogOut className="size-4" />
-                    Sign Out
+                    {t('common.signOut')}
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
@@ -89,11 +94,11 @@ export function Header({ newsCount }: HeaderProps) {
           ) : (
             <div className="flex items-center gap-2">
               <Link href="/signin">
-                <Button variant="ghost" size="sm">Sign In</Button>
+                <Button variant="ghost" size="sm">{t('common.signIn')}</Button>
               </Link>
               <Link href="/signup">
                 <Button size="sm" className="bg-primary hover:bg-primary/90 shadow-sm shadow-primary/20">
-                  Get Started
+                  {t('common.signUp')}
                 </Button>
               </Link>
             </div>

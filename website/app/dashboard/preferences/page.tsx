@@ -11,13 +11,21 @@ import { FieldGroup, FieldLabel } from '@/components/ui/field';
 import { Category } from '@/lib/supabase';
 import { useAuth } from '@/context/AuthContext';
 import { apiFetch } from '@/lib/api';
+import { useTranslation } from '@/context/I18nContext';
+
+const AVAILABLE_SOURCES = [
+  "TSA", "APS", "Al Jazeera", "Ennahar", "El Hayat", "El Heddaf", "WinWin"
+];
 
 export default function PreferencesPage() {
   const router = useRouter();
+  const { t } = useTranslation();
   const { user, isLoading: authLoading } = useAuth();
   
   const [categories, setCategories] = useState<Category[]>([]);
   const [selectedCategories, setSelectedCategories] = useState<number[]>([]);
+  const [hiddenSources, setHiddenSources] = useState<string[]>([]);
+  
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState('');
@@ -40,26 +48,29 @@ export default function PreferencesPage() {
         // Fetch user preferences
         const preferencesResponse = await apiFetch('/api/preferences');
         if (preferencesResponse.status === 401) {
-          setError('Your session expired. Please sign in again.');
+          setError(t('preferences.expired') || 'Your session expired. Please sign in again.');
           router.replace('/signin');
           return;
         }
 
         if (preferencesResponse.ok) {
           const preferencesData = await preferencesResponse.json();
+          
+          // Categories
           const availableCategoryIds = new Set<number>(
             availableCategories.map((category: Category) => category.id)
           );
-
           const validPreferences = (preferencesData.preferences || []).filter((id: number) =>
             availableCategoryIds.has(id)
           );
-
           setSelectedCategories(validPreferences);
+          
+          // Hidden Sources
+          setHiddenSources(preferencesData.hiddenSources || []);
         }
       } catch (error) {
         console.error('Failed to fetch data:', error);
-        setError('Failed to load preferences');
+        setError(t('preferences.failedLoad') || 'Failed to load preferences');
       } finally {
         setIsLoading(false);
       }
@@ -68,7 +79,7 @@ export default function PreferencesPage() {
     if (user) {
       fetchData();
     }
-  }, [user, router, authLoading]);
+  }, [user, router, authLoading, t]);
 
   const toggleCategory = (categoryId: number) => {
     setSelectedCategories((prev) =>
@@ -78,9 +89,17 @@ export default function PreferencesPage() {
     );
   };
 
+  const toggleSource = (source: string) => {
+    setHiddenSources((prev) =>
+      prev.includes(source)
+        ? prev.filter((s) => s !== source)
+        : [...prev, source]
+    );
+  };
+
   const handleSave = async () => {
     if (selectedCategories.length === 0) {
-      setError('Please select at least one category');
+      setError(t('preferences.selectAtLeastOne') || 'Please select at least one category');
       return;
     }
 
@@ -93,25 +112,26 @@ export default function PreferencesPage() {
         method: 'POST',
         body: JSON.stringify({
           categoryIds: selectedCategories,
+          hiddenSources: hiddenSources,
         }),
       });
 
       if (response.status === 401) {
-        setError('Your session expired. Please sign in again.');
+        setError(t('preferences.expired') || 'Your session expired. Please sign in again.');
         router.replace('/signin');
         return;
       }
 
       if (!response.ok) {
         const data = await response.json();
-        setError(data.error || 'Failed to save preferences');
+        setError(data.error || t('preferences.failedSave') || 'Failed to save preferences');
       } else {
-        setSuccess('Preferences saved successfully!');
+        setSuccess(t('preferences.success'));
         setTimeout(() => router.push('/dashboard'), 1500);
       }
     } catch (error) {
       console.error('Failed to save preferences:', error);
-      setError('An error occurred. Please try again.');
+      setError(t('common.error') || 'An error occurred. Please try again.');
     } finally {
       setIsSaving(false);
     }
@@ -119,78 +139,108 @@ export default function PreferencesPage() {
 
   if (authLoading || isLoading) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="min-h-screen bg-background text-foreground">
         <Header />
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-          <p className="text-muted-foreground">Loading preferences...</p>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12 text-center">
+          <p className="text-muted-foreground">{t('common.loading')}</p>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-background text-foreground">
       <Header />
       <main className="max-w-2xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
         <Card className="p-8">
           <h2 className="text-2xl font-bold text-foreground mb-2">
-            My Interests
+            {t('preferences.myInterests')}
           </h2>
           <p className="text-muted-foreground mb-6">
-            Select the categories you&apos;re interested in to customize your news feed.
+            {t('preferences.selectInterests')}
           </p>
 
           {error && (
-            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-6">
+            <div className="bg-destructive/10 border border-destructive/20 text-destructive px-4 py-3 rounded mb-6 text-sm">
               {error}
             </div>
           )}
 
           {success && (
-            <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded mb-6">
+            <div className="bg-primary/10 border border-primary/20 text-primary px-4 py-3 rounded mb-6 text-sm">
               {success}
             </div>
           )}
 
-          <FieldGroup>
-            <FieldLabel>Select your interests:</FieldLabel>
-            {categories.length === 0 ? (
-              <p className="text-sm text-muted-foreground mt-4">
-                No active categories found in the current news dataset.
+          <div className="space-y-10">
+            {/* Categories */}
+            <FieldGroup>
+              <FieldLabel>{t('preferences.selectInterests')}</FieldLabel>
+              {categories.length === 0 ? (
+                <p className="text-sm text-muted-foreground mt-4">
+                  No active categories found.
+                </p>
+              ) : (
+                <div className="grid grid-cols-2 gap-4 mt-4">
+                  {categories.map((category) => (
+                    <div key={category.id} className="flex items-center space-x-3 rtl:space-x-reverse">
+                      <Checkbox
+                        id={`category-${category.id}`}
+                        checked={selectedCategories.includes(category.id)}
+                        onCheckedChange={() => toggleCategory(category.id)}
+                        disabled={isSaving}
+                      />
+                      <label
+                        htmlFor={`category-${category.id}`}
+                        className="text-sm font-medium cursor-pointer"
+                      >
+                        {category.name}
+                      </label>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </FieldGroup>
+
+            {/* Sources */}
+            <FieldGroup>
+              <FieldLabel>{t('preferences.trustedSources')}</FieldLabel>
+              <p className="text-xs text-muted-foreground mb-4">
+                {t('preferences.selectSources')}
               </p>
-            ) : (
-              <div className="grid grid-cols-2 gap-6 mt-4">
-                {categories.map((category) => (
-                  <div key={category.id} className="flex items-center space-x-3">
+              <div className="grid grid-cols-2 gap-4">
+                {AVAILABLE_SOURCES.map((source) => (
+                  <div key={source} className="flex items-center space-x-3 rtl:space-x-reverse">
                     <Checkbox
-                      id={`category-${category.id}`}
-                      checked={selectedCategories.includes(category.id)}
-                      onCheckedChange={() => toggleCategory(category.id)}
+                      id={`source-${source}`}
+                      checked={!hiddenSources.includes(source)}
+                      onCheckedChange={() => toggleSource(source)}
                       disabled={isSaving}
                     />
                     <label
-                      htmlFor={`category-${category.id}`}
+                      htmlFor={`source-${source}`}
                       className="text-sm font-medium cursor-pointer"
                     >
-                      {category.name}
+                      {source}
                     </label>
                   </div>
                 ))}
               </div>
-            )}
-          </FieldGroup>
+            </FieldGroup>
+          </div>
 
-          <div className="flex gap-3 mt-8">
+          <div className="flex gap-3 mt-10">
             <Link href="/dashboard">
               <Button variant="outline" disabled={isSaving}>
-                Cancel
+                {t('common.cancel')}
               </Button>
             </Link>
             <Button
               onClick={handleSave}
-              disabled={isSaving || selectedCategories.length === 0 || categories.length === 0}
+              className="bg-primary hover:bg-primary/90"
+              disabled={isSaving || selectedCategories.length === 0}
             >
-              {isSaving ? 'Saving...' : 'Save Preferences'}
+              {isSaving ? t('preferences.saving') : t('preferences.savePreferences')}
             </Button>
           </div>
         </Card>

@@ -1,0 +1,51 @@
+{
+  "common": {
+    "appName": "Newsly",
+    "dashboard": "Dashboard",
+    "preferences": "Preferences",
+    "signIn": "Sign In",
+    "signUp": "Sign Up",
+    "signOut": "Sign Out",
+    "loading": "Loading...",
+    "save": "Save",
+    "cancel": "Cancel",
+    "search": "Search articles...",
+    "language": "Language",
+    "theme": "Theme"
+  },
+  "dashboard": {
+    "dailyBriefing": "Daily Briefing",
+    "aiDigest": "AI News Digest",
+    "aiSummarize": "AI Summarize",
+    "generatingDigest": "Generating digest...",
+    "regenerate": "Regenerate",
+    "allStories": "All Stories",
+    "noArticles": "No articles yet",
+    "tryRefreshing": "The scraper is collecting articles. Try refreshing or running the pipeline manually.",
+    "clearFilter": "Clear Filter",
+    "runPipeline": "Run Pipeline",
+    "sourcesAnalyzed": "stories analyzed by AI"
+  },
+  "preferences": {
+    "myInterests": "My Interests",
+    "selectInterests": "Select the categories you're interested in to customize your news feed.",
+    "trustedSources": "Trusted Sources",
+    "selectSources": "Uncheck sources you do not trust. Articles from these sources will be hidden.",
+    "savePreferences": "Save Preferences",
+    "saving": "Saving...",
+    "success": "Preferences saved successfully!"
+  },
+  "auth": {
+    "welcomeBack": "Welcome Back",
+    "createAccount": "Create your account",
+    "email": "Email Address",
+    "username": "Username",
+    "password": "Password",
+    "confirmPassword": "Confirm Password",
+    "alreadyHaveAccount": "Already have an account?",
+    "dontHaveAccount": "Don't have an account?",
+    "next": "Next",
+    "back": "Back",
+    "finish": "Finish"
+  }
+}

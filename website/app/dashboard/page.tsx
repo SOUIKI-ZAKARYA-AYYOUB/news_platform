@@ -27,6 +27,14 @@ import {
   Sparkles,
   Zap,
 } from 'lucide-react';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { useTranslation } from '@/context/I18nContext';
 
 const ARTICLES_STEP = 15;
 const REFRESH_COOLDOWN_MS = 30 * 60 * 1000; // 30 minutes between manual refreshes
@@ -63,6 +71,7 @@ function timeAgo(dateString: string | undefined): string {
 
 export default function DashboardPage() {
   const { user, isLoading: authLoading } = useAuth();
+  const { t } = useTranslation();
 
   const [articles, setArticles] = useState<Article[]>([]);
   const [visibleCount, setVisibleCount] = useState(ARTICLES_STEP);
@@ -84,6 +93,20 @@ export default function DashboardPage() {
   const [now, setNow] = useState(Date.now());
   const [summarizingCategory, setSummarizingCategory] = useState(false);
   const [categoryDigest, setCategoryDigest] = useState<string | null>(null);
+
+  const [summaryLanguage, setSummaryLanguage] = useState<string>(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('newsly_summary_lang') || 'auto';
+    }
+    return 'auto';
+  });
+
+  const handleLanguageChange = (val: string) => {
+    setSummaryLanguage(val);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('newsly_summary_lang', val);
+    }
+  };
   const cooldownRemaining = Math.max(0, REFRESH_COOLDOWN_MS - (now - lastRefreshTime));
   const canRefresh = cooldownRemaining === 0 && scrapeStatus !== 'scraping';
   const cooldownMinutes = Math.ceil(cooldownRemaining / 60000);
@@ -227,8 +250,12 @@ export default function DashboardPage() {
     const arabicChars = (titleText.match(/[\u0600-\u06FF]/g) || []).length;
     const latinChars = (titleText.match(/[a-zA-Z\u00C0-\u024F]/g) || []).length;
     let language = 'English';
-    if (arabicChars > latinChars) language = 'Arabic';
-    else if (/[àâäéèêëïîôùûüÿçœæ]|(?:qu'|l'|d'|n'|c'|j'|s')/i.test(titleText)) language = 'French';
+    if (summaryLanguage !== 'auto') {
+      language = summaryLanguage;
+    } else {
+      if (arabicChars > latinChars) language = 'Arabic';
+      else if (/[àâäéèêëïîôùûüÿçœæ]|(?:qu'|l'|d'|n'|c'|j'|s')/i.test(titleText)) language = 'French';
+    }
 
     try {
       const response = await fetch('/api/summarize', {
@@ -268,8 +295,12 @@ export default function DashboardPage() {
     });
 
     let language = 'English';
-    if (arabicCount > snippets.length / 2) language = 'Arabic';
-    else if (frenchCount > snippets.length / 3) language = 'French';
+    if (summaryLanguage !== 'auto') {
+      language = summaryLanguage;
+    } else {
+      if (arabicCount > snippets.length / 2) language = 'Arabic';
+      else if (frenchCount > snippets.length / 3) language = 'French';
+    }
 
     const categoryName = selectedCategoryId !== null
       ? categories.get(selectedCategoryId) || 'Category'
@@ -518,6 +549,19 @@ export default function DashboardPage() {
                 </DropdownMenu>
               </div>
 
+              {/* Language Selector */}
+              <Select value={summaryLanguage} onValueChange={handleLanguageChange}>
+                <SelectTrigger className="w-[110px] h-8 text-xs bg-card/50">
+                  <SelectValue placeholder="Language" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="auto">Auto-detect</SelectItem>
+                  <SelectItem value="English">English</SelectItem>
+                  <SelectItem value="Arabic">Arabic</SelectItem>
+                  <SelectItem value="French">French</SelectItem>
+                </SelectContent>
+              </Select>
+
               {user ? (
                 <Link href="/dashboard/preferences">
                   <Button variant="outline" size="sm" className="gap-1.5 border-border/60">
@@ -647,6 +691,7 @@ export default function DashboardPage() {
                   categoryName={categories.get(article.category_id)}
                   aiSummary={summaryMap.get(article.id)}
                   onRequestSummary={() => handleSummarizeArticle(article)}
+                  preferredLanguage={summaryLanguage}
                 />
               ))}
             </div>

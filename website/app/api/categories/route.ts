@@ -13,7 +13,7 @@ const DEFAULT_CATEGORY_NAMES = [
   'Technology',
 ];
 
-const STANDARD_OTHER_CATEGORY_ID = 4;
+const STANDARD_OTHER_CATEGORY_ID = 99;
 
 function hasOthersCategory(categories: Array<{ id: number; name: string }>): boolean {
   return categories.some((category) => {
@@ -41,11 +41,14 @@ function withOthersCategory<T extends { id: number; name: string; created_at?: s
 function buildDefaultCategories(): Category[] {
   const now = new Date().toISOString();
 
-  return DEFAULT_CATEGORY_NAMES.map((name, index) => ({
-    id: index + 1,
-    name,
-    created_at: now
-  }));
+  return DEFAULT_CATEGORY_NAMES.map((name, index) => {
+    const id = name === 'Others' ? STANDARD_OTHER_CATEGORY_ID : index + 1;
+    return {
+      id,
+      name,
+      created_at: now
+    };
+  });
 }
 
 function parseBooleanFlag(value: string | null): boolean {

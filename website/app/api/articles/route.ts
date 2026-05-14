@@ -1,10 +1,27 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase, Article, isSupabaseConfigured } from '@/lib/supabase';
 import { getSession } from '@/lib/session';
-import { getUserPreferences } from '@/lib/auth';
+import { getUserPreferences, getUserHiddenSources } from '@/lib/auth';
 import { getScrapedArticlesForPublicFeed, syncArticlesFromScraper } from '@/lib/scraper-sync';
 
 export const runtime = 'nodejs';
+
+function filterHiddenSources(articles: Article[], hiddenSources: string[]): Article[] {
+  if (!hiddenSources.length) return articles;
+  const hiddenSet = new Set(hiddenSources.map(s => s.toLowerCase()));
+
+  return articles.filter(article => {
+    // If no sources list, check the main author/source
+    if (!article.sources || article.sources.length === 0) {
+      return !article.author || !hiddenSet.has(article.author.toLowerCase());
+    }
+
+    // Check if any source of the article is in the hidden list
+    // We filter out the article if ALL of its sources are hidden
+    const visibleSources = article.sources.filter(s => s.source && !hiddenSet.has(s.source.toLowerCase()));
+    return visibleSources.length > 0;
+  });
+}
 
 function parseRequestedLimit(request: NextRequest): number | null {
   const rawLimit = request.nextUrl.searchParams.get('limit');
@@ -38,27 +55,28 @@ export async function GET(request: NextRequest) {
         return NextResponse.json({ articles: limitedArticles }, { status: 200 });
       }
 
-      // Authenticated users: filter by preferences, but fallback to all if no preferences set
+      // Authenticated users: filter by preferences
       const preferredCategoryIds = await getUserPreferences(session.userId);
+      const hiddenSources = await getUserHiddenSources(session.userId);
 
-      if (preferredCategoryIds.length === 0) {
-        // No preferences → show ALL articles instead of an empty screen
-        const limitedArticles =
-          requestedLimit === null ? publicArticles : publicArticles.slice(0, requestedLimit);
-        return NextResponse.json(
-          { articles: limitedArticles, allCategories: true },
-          { status: 200 }
+      let filteredPublicArticles = publicArticles;
+
+      if (preferredCategoryIds.length > 0) {
+        filteredPublicArticles = filteredPublicArticles.filter((article) =>
+          preferredCategoryIds.includes(article.category_id)
         );
       }
 
-      const filteredPublicArticles = publicArticles.filter((article) =>
-        preferredCategoryIds.includes(article.category_id)
-      );
+      // Filter out untrusted sources
+      filteredPublicArticles = filterHiddenSources(filteredPublicArticles, hiddenSources);
 
       const limitedArticles =
         requestedLimit === null ? filteredPublicArticles : filteredPublicArticles.slice(0, requestedLimit);
 
-      return NextResponse.json({ articles: limitedArticles }, { status: 200 });
+      return NextResponse.json({
+        articles: limitedArticles,
+        allCategories: preferredCategoryIds.length === 0
+      }, { status: 200 });
     }
 
     if (!session) {
@@ -66,32 +84,30 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ articles: publicArticles }, { status: 200 });
     }
 
-    // Get user's category preferences
+    // Get user's preferences
     const categoryIds = await getUserPreferences(session.userId);
+    const hiddenSources = await getUserHiddenSources(session.userId);
 
-    if (categoryIds.length === 0) {
-      // No preferences → fallback to public feed (all articles) instead of empty
-      const publicArticles = await getScrapedArticlesForPublicFeed(requestedLimit);
-      return NextResponse.json(
-        { articles: publicArticles, allCategories: true },
-        { status: 200 }
-      );
-    }
-
-    // Fetch articles for user's preferred categories
+    // Fetch articles from Supabase
     let articlesQuery = supabase
       .from('articles')
       .select()
-      .in('category_id', categoryIds)
       .order('published_at', { ascending: false });
 
+    if (categoryIds.length > 0) {
+      articlesQuery = articlesQuery.in('category_id', categoryIds);
+    }
+
     if (requestedLimit !== null) {
-      articlesQuery = articlesQuery.limit(requestedLimit);
+      // Fetch a bit more if we have hidden sources to filter, to maintain requested density
+      const fetchLimit = hiddenSources.length > 0 ? requestedLimit * 2 : requestedLimit;
+      articlesQuery = articlesQuery.limit(fetchLimit);
     }
 
     const { data, error } = await articlesQuery;
 
     if (error) {
+      console.error('Database query error:', error);
       return NextResponse.json(
         { error: 'Failed to fetch articles' },
         { status: 500 }
@@ -100,44 +116,18 @@ export async function GET(request: NextRequest) {
 
     let articles = (data as Article[]) || [];
 
-    // If empty, run one lightweight sync from scraper output then query again.
-    if (articles.length === 0) {
-      try {
-        await syncArticlesFromScraper({ runScraper: false });
+    // Apply filtering for hidden sources
+    articles = filterHiddenSources(articles, hiddenSources);
 
-        let refreshedQuery = supabase
-          .from('articles')
-          .select()
-          .in('category_id', categoryIds)
-          .order('published_at', { ascending: false });
-
-        if (requestedLimit !== null) {
-          refreshedQuery = refreshedQuery.limit(requestedLimit);
-        }
-
-        const { data: refreshedData, error: refreshedError } = await refreshedQuery;
-
-        if (!refreshedError) {
-          articles = (refreshedData as Article[]) || [];
-        }
-      } catch (syncError) {
-        console.error('On-demand scraper sync failed:', syncError);
-      }
+    // Final limit
+    if (requestedLimit !== null) {
+      articles = articles.slice(0, requestedLimit);
     }
 
-    // If still empty after sync, fallback to scraped JSON
-    if (articles.length === 0) {
-      const publicArticles = await getScrapedArticlesForPublicFeed(requestedLimit);
-      const filteredArticles = publicArticles.filter((article) =>
-        categoryIds.includes(article.category_id)
-      );
-      return NextResponse.json(
-        { articles: filteredArticles.length > 0 ? filteredArticles : publicArticles, allCategories: filteredArticles.length === 0 },
-        { status: 200 }
-      );
-    }
-
-    return NextResponse.json({ articles }, { status: 200 });
+    return NextResponse.json({
+      articles,
+      allCategories: categoryIds.length === 0
+    }, { status: 200 });
   } catch (error) {
     console.error('Get articles error:', error);
     try {
@@ -155,9 +145,8 @@ export async function GET(request: NextRequest) {
 
 export async function POST(request: NextRequest) {
   try {
-    // This endpoint is for testing purposes - in production, use the scraping job
     const body = await request.json();
-    
+
     if (!body.title || !body.category_id) {
       return NextResponse.json(
         { error: 'Missing required fields' },
@@ -192,7 +181,6 @@ export async function POST(request: NextRequest) {
       { status: 201 }
     );
   } catch (error) {
-    console.error('Create article error:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

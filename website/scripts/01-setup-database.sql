@@ -31,6 +31,15 @@ CREATE TABLE IF NOT EXISTS user_preferences (
   UNIQUE(user_id, category_id)
 );
 
+-- Create user_hidden_sources table
+CREATE TABLE IF NOT EXISTS user_hidden_sources (
+  id BIGSERIAL PRIMARY KEY,
+  user_id UUID NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+  source_name VARCHAR(100) NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE(user_id, source_name)
+);
+
 -- Create articles table
 CREATE TABLE IF NOT EXISTS articles (
   id BIGSERIAL PRIMARY KEY,
@@ -84,13 +93,13 @@ INSERT INTO categories (name, description) VALUES
   ('Politics', 'Political news and updates'),
   ('Economy', 'Economic news and market updates'),
   ('Health', 'Health and wellness news'),
-  ('Sports', 'Sports news and events'),
+  ('Sport', 'Sports news and events'),
   ('Technology', 'Technology and innovation news'),
   ('Science', 'Science and research news'),
-  ('Entertainment', 'Entertainment and celebrity news'),
-  ('Education', 'Education news and updates'),
+  ('Culture', 'Culture and arts news'),
+  ('Society', 'Society and social news'),
   ('Environment', 'Environmental news and sustainability'),
-  ('World', 'International and world news')
+  ('Others', 'Other news')
 ON CONFLICT (name) DO NOTHING;
 
 -- Create indexes for better query performance

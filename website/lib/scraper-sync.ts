@@ -194,9 +194,13 @@ function getPrimaryCategoryKey(article: ScrapedArticle): string {
 }
 
 function getStandardCategoryId(categoryKey: string): number {
+  if (categoryKey === 'other') {
+    return 99;
+  }
+
   const index = STANDARD_CATEGORY_ORDER.indexOf(categoryKey as (typeof STANDARD_CATEGORY_ORDER)[number]);
   if (index === -1) {
-    return STANDARD_CATEGORY_ORDER.indexOf('other') + 1;
+    return 99;
   }
 
   return index + 1;

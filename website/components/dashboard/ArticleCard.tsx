@@ -1,6 +1,6 @@
 'use client';
 
-import { type KeyboardEvent, useEffect, useState } from 'react';
+import { type KeyboardEvent, useEffect, useState, useMemo } from 'react';
 import { Article } from '@/lib/supabase';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -150,9 +150,10 @@ interface ArticleCardProps {
   categoryName?: string;
   aiSummary?: string;
   onRequestSummary?: () => void;
+  preferredLanguage?: string;
 }
 
-export function ArticleCard({ article, categoryName, aiSummary, onRequestSummary }: ArticleCardProps) {
+export function ArticleCard({ article, categoryName, aiSummary, onRequestSummary, preferredLanguage = 'auto' }: ArticleCardProps) {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [whyItMatters, setWhyItMatters] = useState<string | null>(null);
   const [loadingAnalysis, setLoadingAnalysis] = useState(false);
@@ -184,7 +185,10 @@ export function ArticleCard({ article, categoryName, aiSummary, onRequestSummary
   const fullDescription = article.description || article.content || '';
 
   // Detect article language from title text
-  const articleLanguage = (() => {
+  const articleLanguage = useMemo(() => {
+    if (preferredLanguage !== 'auto') {
+      return preferredLanguage;
+    }
     const text = title || fullDescription;
     const arabicChars = (text.match(/[\u0600-\u06FF]/g) || []).length;
     const latinChars = (text.match(/[a-zA-Z\u00C0-\u024F]/g) || []).length;
@@ -192,7 +196,7 @@ export function ArticleCard({ article, categoryName, aiSummary, onRequestSummary
     const frenchIndicators = /[àâäéèêëïîôùûüÿçœæ]|(?:qu'|l'|d'|n'|c'|j'|s')/i;
     if (frenchIndicators.test(text)) return 'French';
     return 'English';
-  })();
+  }, [preferredLanguage, title, fullDescription]);
 
   // Fetch "Why It Matters" when dialog opens
   useEffect(() => {

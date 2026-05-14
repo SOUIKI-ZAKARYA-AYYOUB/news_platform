@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { updateUserPreferences, getUserPreferences } from '@/lib/auth';
+import { updateUserPreferences, getUserPreferences, getUserHiddenSources, updateUserHiddenSources } from '@/lib/auth';
 import { getSession } from '@/lib/session';
 import { categoryPreferenceSchema } from '@/lib/validations';
 
@@ -14,8 +14,10 @@ export async function GET(request: NextRequest) {
     }
 
     const preferences = await getUserPreferences(session.userId);
+    const hiddenSources = await getUserHiddenSources(session.userId);
+
     return NextResponse.json(
-      { preferences },
+      { preferences, hiddenSources },
       { status: 200 }
     );
   } catch (error) {
@@ -46,12 +48,17 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const success = await updateUserPreferences(
+    const successCat = await updateUserPreferences(
       session.userId,
       validation.data.categoryIds
     );
 
-    if (!success) {
+    const successSrc = await updateUserHiddenSources(
+      session.userId,
+      validation.data.hiddenSources || []
+    );
+
+    if (!successCat || !successSrc) {
       return NextResponse.json(
         { error: 'Failed to update preferences' },
         { status: 500 }

@@ -18,14 +18,22 @@ type LocalPreference = {
   created_at: string;
 };
 
+type LocalHiddenSource = {
+  user_id: string;
+  source_name: string;
+  created_at: string;
+};
+
 type LocalAuthStore = {
   users: UserWithPassword[];
   preferences: LocalPreference[];
+  hidden_sources?: LocalHiddenSource[];
 };
 
 const DEFAULT_LOCAL_AUTH_STORE: LocalAuthStore = {
   users: [],
-  preferences: []
+  preferences: [],
+  hidden_sources: []
 };
 
 function getLocalAuthStorePath(): string {
@@ -41,7 +49,8 @@ async function readLocalAuthStore(): Promise<LocalAuthStore> {
 
     return {
       users: Array.isArray(parsed.users) ? parsed.users : [],
-      preferences: Array.isArray(parsed.preferences) ? parsed.preferences : []
+      preferences: Array.isArray(parsed.preferences) ? parsed.preferences : [],
+      hidden_sources: Array.isArray(parsed.hidden_sources) ? parsed.hidden_sources : []
     };
   } catch {
     return { ...DEFAULT_LOCAL_AUTH_STORE };
@@ -493,6 +502,101 @@ export async function getUserPreferences(userId: string): Promise<number[]> {
     return data.map((pref) => pref.category_id);
   } catch (error) {
     console.error('Error in getUserPreferences:', error);
+    return [];
+  }
+}
+
+/**
+ * Update user hidden sources
+ */
+export async function updateUserHiddenSources(
+  userId: string,
+  sources: string[]
+): Promise<boolean> {
+  if (!isSupabaseConfigured) {
+    try {
+      const store = await readLocalAuthStore();
+      const now = new Date().toISOString();
+      const uniqueSources = [...new Set(sources)];
+
+      store.hidden_sources = (store.hidden_sources || []).filter((pref) => pref.user_id !== userId);
+
+      if (uniqueSources.length > 0) {
+        const nextPrefs: LocalHiddenSource[] = uniqueSources.map((source) => ({
+          user_id: userId,
+          source_name: source,
+          created_at: now
+        }));
+
+        store.hidden_sources.push(...nextPrefs);
+      }
+
+      await writeLocalAuthStore(store);
+      return true;
+    } catch (error) {
+      console.error('Error in local updateUserHiddenSources:', error);
+      return false;
+    }
+  }
+
+  try {
+    // First, delete existing hidden sources
+    await supabase.from('user_hidden_sources').delete().eq('user_id', userId);
+
+    // Then insert new hidden sources
+    if (sources.length > 0) {
+      const sourcesToInsert = sources.map((source) => ({
+        user_id: userId,
+        source_name: source,
+      }));
+
+      const { error } = await supabase
+        .from('user_hidden_sources')
+        .insert(sourcesToInsert);
+
+      if (error) {
+        console.error('Error updating hidden sources:', error);
+        return false;
+      }
+    }
+
+    return true;
+  } catch (error) {
+    console.error('Error in updateUserHiddenSources:', error);
+    return false;
+  }
+}
+
+/**
+ * Get user hidden sources
+ */
+export async function getUserHiddenSources(userId: string): Promise<string[]> {
+  if (!isSupabaseConfigured) {
+    try {
+      const store = await readLocalAuthStore();
+      return (store.hidden_sources || [])
+        .filter((pref) => pref.user_id === userId)
+        .map((pref) => pref.source_name);
+    } catch (error) {
+      console.error('Error in local getUserHiddenSources:', error);
+      return [];
+    }
+  }
+
+  try {
+    const { data, error } = await supabase
+      .from('user_hidden_sources')
+      .select('source_name')
+      .eq('user_id', userId);
+
+    if (error) {
+      console.error('Error fetching hidden sources:', error);
+      return [];
+    }
+
+    return data.map((pref) => pref.source_name);
+  } catch (error) {
+    console.error('Error in getUserHiddenSources:', error);
     return [];
   }
 }

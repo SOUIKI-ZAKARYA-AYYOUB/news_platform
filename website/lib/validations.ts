@@ -46,6 +46,7 @@ export const signupPasswordSchema = z.object({
 export const signupCategoriesSchema = z.object({
   userId: z.string(),
   categoryIds: z.array(z.number()).min(1, 'Please select at least one category'),
+  hiddenSources: z.array(z.string()).optional(),
 });
 
 // Signin schema
@@ -72,4 +73,5 @@ export const profileUpdateSchema = z.object({
 // Category preference schema
 export const categoryPreferenceSchema = z.object({
   categoryIds: z.array(z.number()).min(1, 'Please select at least one category'),
+  hiddenSources: z.array(z.string()).optional(),
 });

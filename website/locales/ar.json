@@ -1,0 +1,51 @@
+{
+  "common": {
+    "appName": "نيوزلي",
+    "dashboard": "لوحة التحكم",
+    "preferences": "التفضيلات",
+    "signIn": "تسجيل الدخول",
+    "signUp": "إنشاء حساب",
+    "signOut": "تسجيل الخروج",
+    "loading": "جاري التحميل...",
+    "save": "حفظ",
+    "cancel": "إلغاء",
+    "search": "بحث عن مقالات...",
+    "language": "اللغة",
+    "theme": "المظهر"
+  },
+  "dashboard": {
+    "dailyBriefing": "الإيجاز اليومي",
+    "aiDigest": "ملخص الذكاء الاصطناعي",
+    "aiSummarize": "تلخيص بالذكاء الاصطناعي",
+    "generatingDigest": "جاري إنشاء الملخص...",
+    "regenerate": "إعادة الإنشاء",
+    "allStories": "كل القصص",
+    "noArticles": "لا توجد مقالات بعد",
+    "tryRefreshing": "يقوم النظام بجمع المقالات. حاول التحديث أو تشغيل العملية يدوياً.",
+    "clearFilter": "مسح الفلتر",
+    "runPipeline": "تشغيل النظام",
+    "sourcesAnalyzed": "قصة تم تحليلها بواسطة الذكاء الاصطناعي"
+  },
+  "preferences": {
+    "myInterests": "اهتماماتي",
+    "selectInterests": "اختر الفئات التي تهمك لتخصيص موجز الأخبار الخاص بك.",
+    "trustedSources": "المصادر الموثوقة",
+    "selectSources": "قم بإلغاء تحديد المصادر التي لا تثق بها. سيتم إخفاء المقالات من هذه المصادر.",
+    "savePreferences": "حفظ التفضيلات",
+    "saving": "جاري الحفظ...",
+    "success": "تم حفظ التفضيلات بنجاح!"
+  },
+  "auth": {
+    "welcomeBack": "مرحباً بعودتك",
+    "createAccount": "أنشئ حسابك",
+    "email": "البريد الإلكتروني",
+    "username": "اسم المستخدم",
+    "password": "كلمة المرور",
+    "confirmPassword": "تأكيد كلمة المرور",
+    "alreadyHaveAccount": "لديك حساب بالفعل؟",
+    "dontHaveAccount": "ليس لديك حساب؟",
+    "next": "التالي",
+    "back": "رجوع",
+    "finish": "إنهاء"
+  }
+}
