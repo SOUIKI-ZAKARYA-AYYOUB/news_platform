@@ -451,9 +451,14 @@ async function loadScrapedPayload(): Promise<ScrapedPayload> {
     return normalizeScrapedPayload(payload);
   }
 
-  const outputPath = await resolveScraperOutputPath();
-  const fileContent = await fs.readFile(outputPath, 'utf8');
-  return normalizeScrapedPayload(JSON.parse(fileContent));
+  try {
+    const outputPath = await resolveScraperOutputPath();
+    const fileContent = await fs.readFile(outputPath, 'utf8');
+    return normalizeScrapedPayload(JSON.parse(fileContent));
+  } catch (error) {
+    console.warn('Scraper JSON not found or invalid, returning empty payload.', error);
+    return { articles: [] };
+  }
 }
 
 function normalizeScrapedPayload(raw: unknown): ScrapedPayload {

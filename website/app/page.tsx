@@ -84,7 +84,7 @@ export default function Home() {
             <div className="size-9 rounded-xl bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
               <Newspaper className="size-4.5 text-primary" />
             </div>
-            <span className="text-xl font-bold tracking-tight gradient-text">Newsly</span>
+            <span className="text-xl font-bold tracking-tight text-foreground">Newsly</span>
           </Link>
           <div className="flex items-center gap-2.5">
             <Link href="/dashboard">
@@ -123,7 +123,7 @@ export default function Home() {
             </div>
 
             <h1 className="text-5xl sm:text-6xl lg:text-7xl font-extrabold tracking-tight leading-[1.08] mb-6">
-              <span className="gradient-text">Your AI newsroom</span>
+              <span className="text-foreground">Your AI newsroom</span>
               <br />
               <span className="text-foreground">daily briefing</span>
             </h1>
@@ -161,7 +161,7 @@ export default function Home() {
                 key={stat.label}
                 className="glass rounded-2xl border border-border/40 p-5 text-center hover:border-primary/30 transition-colors"
               >
-                <p className="text-3xl font-bold gradient-text">{stat.value}</p>
+                <p className="text-3xl font-bold text-foreground">{stat.value}</p>
                 <p className="text-sm text-muted-foreground mt-1">{stat.label}</p>
               </div>
             ))}
@@ -203,7 +203,7 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-14">
             <h2 className="text-3xl sm:text-4xl font-bold text-foreground mb-4">
-              Built for <span className="gradient-text">intelligent news consumption</span>
+              Built for <span className="text-foreground">intelligent news consumption</span>
             </h2>
             <p className="text-muted-foreground max-w-lg mx-auto">
               Every feature is designed to give you faster, cleaner, more trustworthy news.
@@ -239,7 +239,6 @@ export default function Home() {
           <div className="flex flex-wrap gap-3 justify-center">
             <Link href="/signup">
               <Button size="lg" className="bg-primary hover:bg-primary/90 shadow-lg shadow-primary/25 px-8 h-12">
-                <Sparkles className="size-4 mr-2" />
                 Get Started Free
               </Button>
             </Link>

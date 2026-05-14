@@ -42,7 +42,7 @@ export default function SignupPage() {
     setError('');
 
     try {
-      // Step 1: Create user account
+      // Step 1: Create user account with preferences
       const signupResponse = await apiFetch('/api/auth/signup', {
         method: 'POST',
         body: JSON.stringify({
@@ -50,6 +50,8 @@ export default function SignupPage() {
           username,
           password,
           confirmPassword,
+          categoryIds: selectedCategories,
+          hiddenSources: hiddenSources,
         }),
       });
 
@@ -61,7 +63,7 @@ export default function SignupPage() {
         return;
       }
 
-      // Step 2: Sign in the user first (so session is available for preferences)
+      // Step 2: Sign in the user
       const signinResponse = await apiFetch('/api/auth/signin', {
         method: 'POST',
         body: JSON.stringify({
@@ -79,22 +81,6 @@ export default function SignupPage() {
 
       const signinData = await signinResponse.json();
       setUser(signinData.user);
-
-      // Step 3: Save user preferences (now with session)
-      const preferencesResponse = await apiFetch('/api/preferences', {
-        method: 'POST',
-        body: JSON.stringify({
-          categoryIds: selectedCategories,
-          hiddenSources: hiddenSources,
-        }),
-      });
-
-      if (!preferencesResponse.ok) {
-        setError(t('preferences.failedSave') || 'Failed to save preferences');
-        setIsLoading(false);
-        isSigningUp.current = false;
-        return;
-      }
 
       // Redirect to dashboard
       router.replace('/dashboard');
@@ -123,7 +109,7 @@ export default function SignupPage() {
               <div className="size-10 rounded-xl bg-primary/10 flex items-center justify-center">
                 <Newspaper className="size-5 text-primary" />
               </div>
-              <span className="text-2xl font-bold gradient-text">{t('common.appName')}</span>
+              <span className="text-2xl font-bold text-foreground">{t('common.appName')}</span>
             </Link>
           </div>
 

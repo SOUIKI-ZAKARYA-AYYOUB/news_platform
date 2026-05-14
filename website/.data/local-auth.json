@@ -133,6 +133,22 @@
       "password_hash": "$2a$10$PbEAM8ZApjJTgsOvoNuAn.ft8ihg4QBlvkNNCqwS2aRWn5Hq6PZgi",
       "created_at": "2026-05-14T01:13:07.505Z",
       "updated_at": "2026-05-14T01:13:07.505Z"
+    },
+    {
+      "id": "5076bd83-3507-4ba3-ad7b-a3d83d14cbcf",
+      "email": "hammadi@gmail.com",
+      "username": "hammadi",
+      "password_hash": "$2a$10$ihdpPrsgpSnkbZNfd4cS4uOdjyrJu9bvd1zRugrP4bwrXVvarpkZK",
+      "created_at": "2026-05-14T01:52:59.726Z",
+      "updated_at": "2026-05-14T01:52:59.726Z"
+    },
+    {
+      "id": "50e009a7-bab6-4e05-898c-be1497896738",
+      "email": "hammmadi@gmail.com",
+      "username": "hammmadi",
+      "password_hash": "$2a$10$2bPI0w/UyId/XUkH9.Fdb.ha8wesb.8KE3tW1iOevp1GRMroBrUFi",
+      "created_at": "2026-05-14T02:02:17.577Z",
+      "updated_at": "2026-05-14T02:02:17.577Z"
     }
   ],
   "preferences": [
@@ -257,26 +273,6 @@
       "created_at": "2026-05-13T21:36:35.131Z"
     },
     {
-      "user_id": "d84523c1-f54b-4e13-a161-9ca5f5c6bc4b",
-      "category_id": 7,
-      "created_at": "2026-05-13T23:09:03.669Z"
-    },
-    {
-      "user_id": "d84523c1-f54b-4e13-a161-9ca5f5c6bc4b",
-      "category_id": 2,
-      "created_at": "2026-05-13T23:09:03.669Z"
-    },
-    {
-      "user_id": "d84523c1-f54b-4e13-a161-9ca5f5c6bc4b",
-      "category_id": 3,
-      "created_at": "2026-05-13T23:09:03.669Z"
-    },
-    {
-      "user_id": "d84523c1-f54b-4e13-a161-9ca5f5c6bc4b",
-      "category_id": 8,
-      "created_at": "2026-05-13T23:09:03.669Z"
-    },
-    {
       "user_id": "db416f65-8317-403a-a26f-a7cfa11d9f1f",
       "category_id": 8,
       "created_at": "2026-05-13T23:13:06.613Z"
@@ -295,6 +291,46 @@
       "user_id": "8dd4acb4-a8c6-4596-bec1-8115586c226d",
       "category_id": 8,
       "created_at": "2026-05-14T01:31:29.989Z"
+    },
+    {
+      "user_id": "d84523c1-f54b-4e13-a161-9ca5f5c6bc4b",
+      "category_id": 7,
+      "created_at": "2026-05-14T02:01:22.965Z"
+    },
+    {
+      "user_id": "d84523c1-f54b-4e13-a161-9ca5f5c6bc4b",
+      "category_id": 2,
+      "created_at": "2026-05-14T02:01:22.965Z"
+    },
+    {
+      "user_id": "50e009a7-bab6-4e05-898c-be1497896738",
+      "category_id": 8,
+      "created_at": "2026-05-14T02:06:52.963Z"
+    },
+    {
+      "user_id": "50e009a7-bab6-4e05-898c-be1497896738",
+      "category_id": 1,
+      "created_at": "2026-05-14T02:06:52.963Z"
+    },
+    {
+      "user_id": "50e009a7-bab6-4e05-898c-be1497896738",
+      "category_id": 2,
+      "created_at": "2026-05-14T02:06:52.963Z"
+    },
+    {
+      "user_id": "50e009a7-bab6-4e05-898c-be1497896738",
+      "category_id": 7,
+      "created_at": "2026-05-14T02:06:52.963Z"
+    },
+    {
+      "user_id": "5076bd83-3507-4ba3-ad7b-a3d83d14cbcf",
+      "category_id": 1,
+      "created_at": "2026-05-14T02:14:29.361Z"
+    },
+    {
+      "user_id": "5076bd83-3507-4ba3-ad7b-a3d83d14cbcf",
+      "category_id": 8,
+      "created_at": "2026-05-14T02:14:29.361Z"
     }
   ],
   "hidden_sources": [
@@ -337,6 +373,11 @@
       "user_id": "8dd4acb4-a8c6-4596-bec1-8115586c226d",
       "source_name": "TSA",
       "created_at": "2026-05-14T01:31:29.994Z"
+    },
+    {
+      "user_id": "50e009a7-bab6-4e05-898c-be1497896738",
+      "source_name": "Ennahar",
+      "created_at": "2026-05-14T02:06:52.968Z"
     }
   ]
 }

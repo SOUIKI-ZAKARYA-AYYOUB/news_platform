@@ -24,7 +24,6 @@ import {
   Newspaper,
   RefreshCcw,
   Settings,
-  Sparkles,
   Zap,
 } from 'lucide-react';
 import {
@@ -589,9 +588,6 @@ export default function DashboardPage() {
                 <div className="absolute top-0 right-0 w-40 h-40 bg-primary/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
                 <div className="relative">
                   <div className="flex items-center gap-2 mb-3">
-                    <div className="size-8 rounded-lg bg-primary/15 flex items-center justify-center">
-                      <Sparkles className="size-4 text-primary" />
-                    </div>
                     <div>
                       <p className="text-sm font-semibold text-foreground">
                         AI News Digest
@@ -625,7 +621,6 @@ export default function DashboardPage() {
                 </>
               ) : (
                 <>
-                  <Sparkles className="size-3.5" />
                   {categoryDigest ? 'Regenerate' : 'AI Summarize'} {selectedCategoryId !== null
                     ? categories.get(selectedCategoryId) || 'Category'
                     : 'All Stories'} ({filteredArticles.length})

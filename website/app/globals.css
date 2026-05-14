@@ -157,10 +157,7 @@ html {
 
 /* ─── Gradient text utility ─── */
 .gradient-text {
-  background: linear-gradient(135deg, oklch(0.55 0.22 264), oklch(0.6 0.2 300), oklch(0.65 0.18 330));
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
+  color: var(--foreground);
 }
 
 /* ─── Animated gradient background ─── */

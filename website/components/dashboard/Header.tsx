@@ -37,7 +37,7 @@ export function Header({ newsCount }: HeaderProps) {
           <div className="size-9 rounded-xl bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
             <Newspaper className="size-4.5 text-primary" />
           </div>
-          <span className="text-xl font-bold tracking-tight gradient-text">{t('common.appName')}</span>
+          <span className="text-xl font-bold tracking-tight text-foreground">{t('common.appName')}</span>
         </Link>
 
         <div className="flex items-center gap-3">

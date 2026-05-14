@@ -37,6 +37,8 @@ export const signupPasswordSchema = z.object({
   username: usernameSchema,
   password: passwordSchema,
   confirmPassword: z.string(),
+  categoryIds: z.array(z.number()).optional(),
+  hiddenSources: z.array(z.string()).optional(),
 }).refine((data) => data.password === data.confirmPassword, {
   message: 'Passwords do not match',
   path: ['confirmPassword'],

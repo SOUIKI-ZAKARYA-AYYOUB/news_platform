@@ -15,7 +15,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const { email, username, password } = validation.data;
+    const { email, username, password, categoryIds, hiddenSources } = validation.data;
 
     // Check if email already exists
     const existingEmailUser = await getUserByEmail(email);
@@ -42,6 +42,15 @@ export async function POST(request: NextRequest) {
         { error: 'Failed to create user' },
         { status: 500 }
       );
+    }
+
+    // Save initial preferences if provided
+    if (categoryIds && categoryIds.length > 0) {
+      const { updateUserPreferences, updateUserHiddenSources } = await import('@/lib/auth');
+      await updateUserPreferences(user.id, categoryIds);
+      if (hiddenSources) {
+        await updateUserHiddenSources(user.id, hiddenSources);
+      }
     }
 
     return NextResponse.json(

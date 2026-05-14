@@ -80,7 +80,7 @@ export default function SigninPage() {
               <div className="size-10 rounded-xl bg-primary/10 flex items-center justify-center">
                 <Newspaper className="size-5 text-primary" />
               </div>
-              <span className="text-2xl font-bold gradient-text">Newsly</span>
+              <span className="text-2xl font-bold text-foreground">Newsly</span>
             </Link>
             <h2 className="text-2xl font-bold text-foreground">Welcome back</h2>
             <p className="text-sm text-muted-foreground mt-1.5">

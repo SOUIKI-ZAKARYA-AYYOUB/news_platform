@@ -2,10 +2,8 @@
 
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import en from '../locales/en.json';
-import fr from '../locales/fr.json';
-import ar from '../locales/ar.json';
 
-type Locale = 'en' | 'fr' | 'ar';
+type Locale = 'en';
 type Dictionary = typeof en;
 
 interface I18nContextType {
@@ -13,7 +11,7 @@ interface I18nContextType {
   t: (key: string) => string;
 }
 
-const dictionaries: Record<Locale, Dictionary> = { en, fr, ar };
+const dictionaries: Record<Locale, Dictionary> = { en };
 
 const I18nContext = createContext<I18nContextType | undefined>(undefined);
 
