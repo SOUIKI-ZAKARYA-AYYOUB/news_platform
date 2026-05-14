@@ -29,7 +29,7 @@ export function SignupStep4({
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        const response = await apiFetch('/api/categories?usedOnly=1');
+        const response = await apiFetch('/api/categories');
         const data = await response.json();
 
         if (!response.ok) {
