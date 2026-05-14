@@ -51,15 +51,12 @@ type CategorySummary = {
 
 type RuntimeStatusResponse = {
   website: {
+    databaseConfigured: boolean;
     groqSummariesConfigured: boolean;
     groqModel: string;
-    localAuthFallback: boolean;
-    localSummaryFallback: boolean;
-    notebookModelPath: string;
     scraperRunEnabled: boolean;
     storyProcessorLinked: boolean;
     duplicateClusteringLinked: boolean;
-    supabaseConfigured: boolean;
   };
 };
 
@@ -444,7 +441,7 @@ function buildProjectStatus(
       {
         name: 'Word embedding notebook',
         status: 'available',
-        detail: `Notebook experiments are surfaced in status at ${website.notebookModelPath}; no exported runtime model file is present`
+        detail: 'Notebook experiments for word embeddings; no exported runtime model file is present'
       }
     ],
     sources: [

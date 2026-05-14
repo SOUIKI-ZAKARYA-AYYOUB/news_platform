@@ -1,145 +1,80 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { supabase, Article, isSupabaseConfigured } from '@/lib/supabase';
+
+import pool from '@/lib/db';
 import { getSession } from '@/lib/session';
 import { getUserPreferences, getUserHiddenSources } from '@/lib/auth';
-import { getScrapedArticlesForPublicFeed, syncArticlesFromScraper } from '@/lib/scraper-sync';
+import type { Article } from '@/lib/supabase';
 
 export const runtime = 'nodejs';
 
 function filterHiddenSources(articles: Article[], hiddenSources: string[]): Article[] {
   if (!hiddenSources.length) return articles;
-  const hiddenSet = new Set(hiddenSources.map(s => s.toLowerCase()));
+  const hidden = new Set(hiddenSources.map((s) => s.toLowerCase()));
 
-  return articles.filter(article => {
-    // If no sources list, check the main author/source
+  return articles.filter((article) => {
     if (!article.sources || article.sources.length === 0) {
-      return !article.author || !hiddenSet.has(article.author.toLowerCase());
+      return !article.author || !hidden.has(article.author.toLowerCase());
     }
-
-    // Check if any source of the article is in the hidden list
-    // We filter out the article if ALL of its sources are hidden
-    const visibleSources = article.sources.filter(s => s.source && !hiddenSet.has(s.source.toLowerCase()));
+    const visibleSources = article.sources.filter(
+      (s) => s.source && !hidden.has(s.source.toLowerCase()),
+    );
     return visibleSources.length > 0;
   });
 }
 
 function parseRequestedLimit(request: NextRequest): number | null {
-  const rawLimit = request.nextUrl.searchParams.get('limit');
-
-  if (!rawLimit) {
-    return null;
-  }
-
-  const parsed = Number.parseInt(rawLimit, 10);
-
-  if (!Number.isFinite(parsed) || parsed <= 0) {
-    return null;
-  }
-
+  const raw = request.nextUrl.searchParams.get('limit');
+  if (!raw) return null;
+  const parsed = Number.parseInt(raw, 10);
+  if (!Number.isFinite(parsed) || parsed <= 0) return null;
   return Math.min(parsed, 1000);
 }
 
 export async function GET(request: NextRequest) {
+  const requestedLimit = parseRequestedLimit(request);
+  const session = await getSession();
+
   try {
-    const requestedLimit = parseRequestedLimit(request);
-    const session = await getSession();
-
-    if (!isSupabaseConfigured) {
-      // In local mode, read directly from scraped JSON
-      const publicArticles = await getScrapedArticlesForPublicFeed(null);
-
-      if (!session) {
-        // Unauthenticated users: show all articles
-        const limitedArticles =
-          requestedLimit === null ? publicArticles : publicArticles.slice(0, requestedLimit);
-        return NextResponse.json({ articles: limitedArticles }, { status: 200 });
-      }
-
-      // Authenticated users: filter by preferences
-      const preferredCategoryIds = await getUserPreferences(session.userId);
-      const hiddenSources = await getUserHiddenSources(session.userId);
-
-      let filteredPublicArticles = publicArticles;
-
-      if (preferredCategoryIds.length > 0) {
-        filteredPublicArticles = filteredPublicArticles.filter((article) =>
-          preferredCategoryIds.includes(article.category_id)
-        );
-      }
-
-      // Filter out untrusted sources
-      filteredPublicArticles = filterHiddenSources(filteredPublicArticles, hiddenSources);
-
-      const limitedArticles =
-        requestedLimit === null ? filteredPublicArticles : filteredPublicArticles.slice(0, requestedLimit);
-
-      return NextResponse.json({
-        articles: limitedArticles,
-        allCategories: preferredCategoryIds.length === 0
-      }, { status: 200 });
-    }
+    let query: string;
+    let params: unknown[];
 
     if (!session) {
-      const publicArticles = await getScrapedArticlesForPublicFeed(requestedLimit);
-      return NextResponse.json({ articles: publicArticles }, { status: 200 });
-    }
+      query = `SELECT * FROM articles ORDER BY published_at DESC${requestedLimit ? ` LIMIT ${requestedLimit}` : ''}`;
+      params = [];
+    } else {
+      const categoryIds = await getUserPreferences(session.userId);
+      const hiddenSources = await getUserHiddenSources(session.userId);
 
-    // Get user's preferences
-    const categoryIds = await getUserPreferences(session.userId);
-    const hiddenSources = await getUserHiddenSources(session.userId);
+      const fetchLimit = requestedLimit
+        ? hiddenSources.length > 0
+          ? requestedLimit * 2
+          : requestedLimit
+        : null;
 
-    // Fetch articles from Supabase
-    let articlesQuery = supabase
-      .from('articles')
-      .select()
-      .order('published_at', { ascending: false });
+      if (categoryIds.length > 0) {
+        const placeholders = categoryIds.map((_, i) => `$${i + 1}`).join(', ');
+        query = `SELECT * FROM articles WHERE category_id IN (${placeholders}) ORDER BY published_at DESC${fetchLimit ? ` LIMIT ${fetchLimit}` : ''}`;
+        params = categoryIds;
+      } else {
+        query = `SELECT * FROM articles ORDER BY published_at DESC${fetchLimit ? ` LIMIT ${fetchLimit}` : ''}`;
+        params = [];
+      }
 
-    if (categoryIds.length > 0) {
-      articlesQuery = articlesQuery.in('category_id', categoryIds);
-    }
+      const { rows } = await pool.query<Article>(query, params);
+      let articles = filterHiddenSources(rows, hiddenSources);
+      if (requestedLimit !== null) articles = articles.slice(0, requestedLimit);
 
-    if (requestedLimit !== null) {
-      // Fetch a bit more if we have hidden sources to filter, to maintain requested density
-      const fetchLimit = hiddenSources.length > 0 ? requestedLimit * 2 : requestedLimit;
-      articlesQuery = articlesQuery.limit(fetchLimit);
-    }
-
-    const { data, error } = await articlesQuery;
-
-    if (error) {
-      console.error('Database query error:', error);
       return NextResponse.json(
-        { error: 'Failed to fetch articles' },
-        { status: 500 }
+        { articles, allCategories: categoryIds.length === 0 },
+        { status: 200 },
       );
     }
 
-    let articles = (data as Article[]) || [];
-
-    // Apply filtering for hidden sources
-    articles = filterHiddenSources(articles, hiddenSources);
-
-    // Final limit
-    if (requestedLimit !== null) {
-      articles = articles.slice(0, requestedLimit);
-    }
-
-    return NextResponse.json({
-      articles,
-      allCategories: categoryIds.length === 0
-    }, { status: 200 });
+    const { rows } = await pool.query<Article>(query, params);
+    return NextResponse.json({ articles: rows }, { status: 200 });
   } catch (error) {
     console.error('Get articles error:', error);
-    try {
-      const requestedLimit = parseRequestedLimit(request);
-      const publicArticles = await getScrapedArticlesForPublicFeed(requestedLimit);
-      return NextResponse.json({ articles: publicArticles }, { status: 200 });
-    } catch {
-      return NextResponse.json(
-        { error: 'Internal server error' },
-        { status: 500 }
-      );
-    }
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
 
@@ -148,42 +83,29 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
 
     if (!body.title || !body.category_id) {
-      return NextResponse.json(
-        { error: 'Missing required fields' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
-    const { data, error } = await supabase
-      .from('articles')
-      .insert({
-        title: body.title,
-        description: body.description,
-        content: body.content,
-        category_id: body.category_id,
-        author: body.author,
-        source_url: body.source_url,
-        image_url: body.image_url,
-        published_at: body.published_at || new Date().toISOString(),
-      })
-      .select()
-      .single();
-
-    if (error) {
-      return NextResponse.json(
-        { error: 'Failed to create article' },
-        { status: 500 }
-      );
-    }
-
-    return NextResponse.json(
-      { article: data as Article },
-      { status: 201 }
+    const { rows } = await pool.query<Article>(
+      `INSERT INTO articles
+         (title, description, content, category_id, author, source_url, image_url, published_at)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+       RETURNING *`,
+      [
+        body.title,
+        body.description ?? null,
+        body.content ?? null,
+        body.category_id,
+        body.author ?? null,
+        body.source_url ?? null,
+        body.image_url ?? null,
+        body.published_at || new Date().toISOString(),
+      ],
     );
+
+    return NextResponse.json({ article: rows[0] }, { status: 201 });
   } catch (error) {
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    console.error('Create article error:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

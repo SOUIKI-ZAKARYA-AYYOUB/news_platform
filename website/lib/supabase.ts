@@ -1,19 +1,6 @@
-import { createClient } from '@supabase/supabase-js';
+// Supabase removed. This file is kept for its type exports only.
+// All database access goes through lib/db.ts (pg Pool).
 
-const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-
-export const isSupabaseConfigured = Boolean(supabaseUrl && supabaseAnonKey);
-
-const fallbackSupabaseUrl = 'https://example.supabase.co';
-const fallbackSupabaseAnonKey = 'public-anon-key';
-
-export const supabase = createClient(
-  supabaseUrl || fallbackSupabaseUrl,
-  supabaseAnonKey || fallbackSupabaseAnonKey
-);
-
-// Types for database
 export interface User {
   id: string;
   email: string;

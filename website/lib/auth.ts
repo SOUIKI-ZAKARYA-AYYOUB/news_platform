@@ -1,602 +1,180 @@
-import fs from 'node:fs/promises';
-import path from 'node:path';
-import { randomUUID } from 'node:crypto';
-
 import bcryptjs from 'bcryptjs';
-import { isSupabaseConfigured, supabase, User } from './supabase';
+import pool from '@/lib/db';
+import type { User } from '@/lib/supabase';
 
-// Salt rounds for bcrypt
 const SALT_ROUNDS = 10;
 
-type UserWithPassword = User & {
-  password_hash?: string | null;
-};
+type UserRow = User & { password_hash: string };
 
-type LocalPreference = {
-  user_id: string;
-  category_id: number;
-  created_at: string;
-};
-
-type LocalHiddenSource = {
-  user_id: string;
-  source_name: string;
-  created_at: string;
-};
-
-type LocalAuthStore = {
-  users: UserWithPassword[];
-  preferences: LocalPreference[];
-  hidden_sources?: LocalHiddenSource[];
-};
-
-const DEFAULT_LOCAL_AUTH_STORE: LocalAuthStore = {
-  users: [],
-  preferences: [],
-  hidden_sources: []
-};
-
-function getLocalAuthStorePath(): string {
-  return path.resolve(process.cwd(), '.data/local-auth.json');
+function toUser(row: UserRow): User {
+  const { password_hash: _ignored, ...user } = row;
+  return user;
 }
 
-async function readLocalAuthStore(): Promise<LocalAuthStore> {
-  const filePath = getLocalAuthStorePath();
-
-  try {
-    const content = await fs.readFile(filePath, 'utf8');
-    const parsed = JSON.parse(content) as LocalAuthStore;
-
-    return {
-      users: Array.isArray(parsed.users) ? parsed.users : [],
-      preferences: Array.isArray(parsed.preferences) ? parsed.preferences : [],
-      hidden_sources: Array.isArray(parsed.hidden_sources) ? parsed.hidden_sources : []
-    };
-  } catch {
-    return { ...DEFAULT_LOCAL_AUTH_STORE };
-  }
-}
-
-async function writeLocalAuthStore(store: LocalAuthStore): Promise<void> {
-  const filePath = getLocalAuthStorePath();
-  await fs.mkdir(path.dirname(filePath), { recursive: true });
-  await fs.writeFile(filePath, JSON.stringify(store, null, 2), 'utf8');
-}
-
-function sanitizeUser(user: UserWithPassword): User {
-  const { password_hash: _ignored, ...safeUser } = user;
-  return safeUser;
-}
-
-/**
- * Hash a password using bcryptjs
- */
 export async function hashPassword(password: string): Promise<string> {
   return bcryptjs.hash(password, SALT_ROUNDS);
 }
 
-/**
- * Compare a plain password with a hashed password
- */
-export async function comparePassword(
-  plainPassword: string,
-  hashedPassword: string
-): Promise<boolean> {
-  return bcryptjs.compare(plainPassword, hashedPassword);
+export async function comparePassword(plain: string, hashed: string): Promise<boolean> {
+  return bcryptjs.compare(plain, hashed);
 }
 
-/**
- * Create a new user in the database
- */
 export async function createUser(
   email: string,
   username: string,
-  password: string
+  password: string,
 ): Promise<User | null> {
-  if (!isSupabaseConfigured) {
-    try {
-      const store = await readLocalAuthStore();
-      const normalizedEmail = email.trim().toLowerCase();
-      const normalizedUsername = username.trim().toLowerCase();
-
-      const alreadyExists = store.users.some(
-        (user) =>
-          user.email.toLowerCase() === normalizedEmail ||
-          user.username.toLowerCase() === normalizedUsername
-      );
-
-      if (alreadyExists) {
-        return null;
-      }
-
-      const now = new Date().toISOString();
-      const hashedPassword = await hashPassword(password);
-
-      const newUser: UserWithPassword = {
-        id: randomUUID(),
-        email,
-        username,
-        password_hash: hashedPassword,
-        created_at: now,
-        updated_at: now
-      };
-
-      store.users.push(newUser);
-      await writeLocalAuthStore(store);
-      return sanitizeUser(newUser);
-    } catch (error) {
-      console.error('Error creating local user:', error);
-      return null;
-    }
-  }
-
+  const client = await pool.connect();
   try {
-    const hashedPassword = await hashPassword(password);
-
-    const { data, error } = await supabase
-      .from('users')
-      .insert({
-        email,
-        username,
-        password_hash: hashedPassword,
-      })
-      .select()
-      .single();
-
-    if (error) {
-      console.error('Error creating user:', error);
-      return null;
-    }
-
-    return data as User;
-  } catch (error) {
-    console.error('Error in createUser:', error);
+    const passwordHash = await hashPassword(password);
+    const { rows } = await client.query<UserRow>(
+      `INSERT INTO users (email, username, password_hash)
+       VALUES ($1, $2, $3)
+       RETURNING *`,
+      [email.trim().toLowerCase(), username.trim(), passwordHash],
+    );
+    return rows[0] ? toUser(rows[0]) : null;
+  } catch (error: unknown) {
+    // unique_violation (23505) means email or username already taken
+    if ((error as { code?: string }).code === '23505') return null;
+    console.error('createUser error:', error);
     return null;
+  } finally {
+    client.release();
   }
 }
 
-/**
- * Get user by email
- */
 export async function getUserByEmail(email: string): Promise<User | null> {
-  if (!isSupabaseConfigured) {
-    try {
-      const store = await readLocalAuthStore();
-      const user = store.users.find(
-        (entry) => entry.email.toLowerCase() === email.trim().toLowerCase()
-      );
-
-      return user ? sanitizeUser(user) : null;
-    } catch (error) {
-      console.error('Error in local getUserByEmail:', error);
-      return null;
-    }
-  }
-
-  try {
-    const { data, error } = await supabase
-      .from('users')
-      .select()
-      .eq('email', email)
-      .single();
-
-    if (error || !data) {
-      return null;
-    }
-
-    return data as User;
-  } catch (error) {
-    console.error('Error in getUserByEmail:', error);
-    return null;
-  }
+  const { rows } = await pool.query<UserRow>(
+    'SELECT * FROM users WHERE email = $1 LIMIT 1',
+    [email.trim().toLowerCase()],
+  );
+  return rows[0] ? toUser(rows[0]) : null;
 }
 
-/**
- * Get user by username
- */
 export async function getUserByUsername(username: string): Promise<User | null> {
-  if (!isSupabaseConfigured) {
-    try {
-      const store = await readLocalAuthStore();
-      const user = store.users.find(
-        (entry) => entry.username.toLowerCase() === username.trim().toLowerCase()
-      );
-
-      return user ? sanitizeUser(user) : null;
-    } catch (error) {
-      console.error('Error in local getUserByUsername:', error);
-      return null;
-    }
-  }
-
-  try {
-    const { data, error } = await supabase
-      .from('users')
-      .select()
-      .eq('username', username)
-      .single();
-
-    if (error || !data) {
-      return null;
-    }
-
-    return data as User;
-  } catch (error) {
-    console.error('Error in getUserByUsername:', error);
-    return null;
-  }
+  const { rows } = await pool.query<UserRow>(
+    'SELECT * FROM users WHERE LOWER(username) = LOWER($1) LIMIT 1',
+    [username.trim()],
+  );
+  return rows[0] ? toUser(rows[0]) : null;
 }
 
-/**
- * Get user by ID
- */
 export async function getUserById(userId: string): Promise<User | null> {
-  if (!isSupabaseConfigured) {
-    try {
-      const store = await readLocalAuthStore();
-      const user = store.users.find((entry) => entry.id === userId);
-      return user ? sanitizeUser(user) : null;
-    } catch (error) {
-      console.error('Error in local getUserById:', error);
-      return null;
-    }
-  }
-
-  try {
-    const { data, error } = await supabase
-      .from('users')
-      .select()
-      .eq('id', userId)
-      .single();
-
-    if (error || !data) {
-      return null;
-    }
-
-    return data as User;
-  } catch (error) {
-    console.error('Error in getUserById:', error);
-    return null;
-  }
+  const { rows } = await pool.query<UserRow>(
+    'SELECT * FROM users WHERE id = $1 LIMIT 1',
+    [userId],
+  );
+  return rows[0] ? toUser(rows[0]) : null;
 }
 
-/**
- * Verify user credentials
- */
 export async function verifyCredentials(
   email: string,
-  password: string
+  password: string,
 ): Promise<User | null> {
-  if (!isSupabaseConfigured) {
-    try {
-      const store = await readLocalAuthStore();
-      const user = store.users.find(
-        (entry) => entry.email.toLowerCase() === email.trim().toLowerCase()
-      );
-
-      if (!user || !user.password_hash) {
-        return null;
-      }
-
-      const isPasswordValid = await comparePassword(password, user.password_hash);
-      if (!isPasswordValid) {
-        return null;
-      }
-
-      return sanitizeUser(user);
-    } catch (error) {
-      console.error('Error in local verifyCredentials:', error);
-      return null;
-    }
-  }
-
-  try {
-    const { data, error } = await supabase
-      .from('users')
-      .select()
-      .eq('email', email)
-      .single();
-
-    if (error || !data) {
-      return null;
-    }
-
-    const user = data as UserWithPassword;
-
-    const isPasswordValid = await comparePassword(password, user.password_hash ?? '');
-    if (!isPasswordValid) {
-      return null;
-    }
-
-    return user as User;
-  } catch (error) {
-    console.error('Error in verifyCredentials:', error);
-    return null;
-  }
+  const { rows } = await pool.query<UserRow>(
+    'SELECT * FROM users WHERE email = $1 LIMIT 1',
+    [email.trim().toLowerCase()],
+  );
+  const row = rows[0];
+  if (!row) return null;
+  const valid = await comparePassword(password, row.password_hash);
+  return valid ? toUser(row) : null;
 }
 
-export type ChangePasswordResult = {
-  success: boolean;
-  error?: string;
-};
+export type ChangePasswordResult = { success: boolean; error?: string };
 
 export async function changeUserPassword(
   userId: string,
   currentPassword: string,
-  newPassword: string
+  newPassword: string,
 ): Promise<ChangePasswordResult> {
   if (currentPassword === newPassword) {
     return { success: false, error: 'New password must be different from current password' };
   }
 
-  if (!isSupabaseConfigured) {
-    try {
-      const store = await readLocalAuthStore();
-      const userIndex = store.users.findIndex((entry) => entry.id === userId);
+  const { rows } = await pool.query<UserRow>(
+    'SELECT * FROM users WHERE id = $1 LIMIT 1',
+    [userId],
+  );
+  const row = rows[0];
+  if (!row) return { success: false, error: 'User not found' };
 
-      if (userIndex === -1) {
-        return { success: false, error: 'User not found' };
-      }
+  const valid = await comparePassword(currentPassword, row.password_hash);
+  if (!valid) return { success: false, error: 'Current password is incorrect' };
 
-      const existingUser = store.users[userIndex];
-
-      if (!existingUser.password_hash) {
-        return { success: false, error: 'Password record is missing for this account' };
-      }
-
-      const isCurrentPasswordValid = await comparePassword(currentPassword, existingUser.password_hash);
-
-      if (!isCurrentPasswordValid) {
-        return { success: false, error: 'Current password is incorrect' };
-      }
-
-      const updatedPasswordHash = await hashPassword(newPassword);
-
-      store.users[userIndex] = {
-        ...existingUser,
-        password_hash: updatedPasswordHash,
-        updated_at: new Date().toISOString()
-      };
-
-      await writeLocalAuthStore(store);
-      return { success: true };
-    } catch (error) {
-      console.error('Error in local changeUserPassword:', error);
-      return { success: false, error: 'Failed to update password' };
-    }
-  }
-
-  try {
-    const { data, error } = await supabase
-      .from('users')
-      .select('id, password_hash')
-      .eq('id', userId)
-      .single();
-
-    if (error || !data) {
-      return { success: false, error: 'User not found' };
-    }
-
-    const currentHash = (data as UserWithPassword).password_hash;
-
-    if (!currentHash) {
-      return { success: false, error: 'Password record is missing for this account' };
-    }
-
-    const isCurrentPasswordValid = await comparePassword(currentPassword, currentHash);
-
-    if (!isCurrentPasswordValid) {
-      return { success: false, error: 'Current password is incorrect' };
-    }
-
-    const updatedPasswordHash = await hashPassword(newPassword);
-
-    const { error: updateError } = await supabase
-      .from('users')
-      .update({
-        password_hash: updatedPasswordHash,
-        updated_at: new Date().toISOString()
-      })
-      .eq('id', userId);
-
-    if (updateError) {
-      console.error('Error updating password:', updateError);
-      return { success: false, error: 'Failed to update password' };
-    }
-
-    return { success: true };
-  } catch (error) {
-    console.error('Error in changeUserPassword:', error);
-    return { success: false, error: 'Failed to update password' };
-  }
+  const newHash = await hashPassword(newPassword);
+  await pool.query(
+    'UPDATE users SET password_hash = $1, updated_at = NOW() WHERE id = $2',
+    [newHash, userId],
+  );
+  return { success: true };
 }
 
-/**
- * Update user preferences (categories)
- */
 export async function updateUserPreferences(
   userId: string,
-  categoryIds: number[]
+  categoryIds: number[],
 ): Promise<boolean> {
-  if (!isSupabaseConfigured) {
-    try {
-      const store = await readLocalAuthStore();
-      const now = new Date().toISOString();
-      const uniqueCategoryIds = [...new Set(categoryIds)];
-
-      store.preferences = store.preferences.filter((pref) => pref.user_id !== userId);
-
-      if (uniqueCategoryIds.length > 0) {
-        const nextPrefs: LocalPreference[] = uniqueCategoryIds.map((categoryId) => ({
-          user_id: userId,
-          category_id: categoryId,
-          created_at: now
-        }));
-
-        store.preferences.push(...nextPrefs);
-      }
-
-      await writeLocalAuthStore(store);
-      return true;
-    } catch (error) {
-      console.error('Error in local updateUserPreferences:', error);
-      return false;
-    }
-  }
-
+  const client = await pool.connect();
   try {
-    // First, delete existing preferences
-    await supabase.from('user_preferences').delete().eq('user_id', userId);
-
-    // Then insert new preferences
-    if (categoryIds.length > 0) {
-      const preferencesToInsert = categoryIds.map((categoryId) => ({
-        user_id: userId,
-        category_id: categoryId,
-      }));
-
-      const { error } = await supabase
-        .from('user_preferences')
-        .insert(preferencesToInsert);
-
-      if (error) {
-        console.error('Error updating preferences:', error);
-        return false;
-      }
+    await client.query('BEGIN');
+    await client.query('DELETE FROM user_preferences WHERE user_id = $1', [userId]);
+    const unique = [...new Set(categoryIds)];
+    for (const categoryId of unique) {
+      await client.query(
+        'INSERT INTO user_preferences (user_id, category_id) VALUES ($1, $2) ON CONFLICT DO NOTHING',
+        [userId, categoryId],
+      );
     }
-
+    await client.query('COMMIT');
     return true;
   } catch (error) {
-    console.error('Error in updateUserPreferences:', error);
+    await client.query('ROLLBACK');
+    console.error('updateUserPreferences error:', error);
     return false;
+  } finally {
+    client.release();
   }
 }
 
-/**
- * Get user preferences
- */
 export async function getUserPreferences(userId: string): Promise<number[]> {
-  if (!isSupabaseConfigured) {
-    try {
-      const store = await readLocalAuthStore();
-      return store.preferences
-        .filter((pref) => pref.user_id === userId)
-        .map((pref) => pref.category_id);
-    } catch (error) {
-      console.error('Error in local getUserPreferences:', error);
-      return [];
-    }
-  }
-
-  try {
-    const { data, error } = await supabase
-      .from('user_preferences')
-      .select('category_id')
-      .eq('user_id', userId);
-
-    if (error) {
-      console.error('Error fetching preferences:', error);
-      return [];
-    }
-
-    return data.map((pref) => pref.category_id);
-  } catch (error) {
-    console.error('Error in getUserPreferences:', error);
-    return [];
-  }
+  const { rows } = await pool.query<{ category_id: number }>(
+    'SELECT category_id FROM user_preferences WHERE user_id = $1',
+    [userId],
+  );
+  return rows.map((r) => r.category_id);
 }
 
-/**
- * Update user hidden sources
- */
 export async function updateUserHiddenSources(
   userId: string,
-  sources: string[]
+  sources: string[],
 ): Promise<boolean> {
-  if (!isSupabaseConfigured) {
-    try {
-      const store = await readLocalAuthStore();
-      const now = new Date().toISOString();
-      const uniqueSources = [...new Set(sources)];
-
-      store.hidden_sources = (store.hidden_sources || []).filter((pref) => pref.user_id !== userId);
-
-      if (uniqueSources.length > 0) {
-        const nextPrefs: LocalHiddenSource[] = uniqueSources.map((source) => ({
-          user_id: userId,
-          source_name: source,
-          created_at: now
-        }));
-
-        store.hidden_sources.push(...nextPrefs);
-      }
-
-      await writeLocalAuthStore(store);
-      return true;
-    } catch (error) {
-      console.error('Error in local updateUserHiddenSources:', error);
-      return false;
-    }
-  }
-
+  const client = await pool.connect();
   try {
-    // First, delete existing hidden sources
-    await supabase.from('user_hidden_sources').delete().eq('user_id', userId);
-
-    // Then insert new hidden sources
-    if (sources.length > 0) {
-      const sourcesToInsert = sources.map((source) => ({
-        user_id: userId,
-        source_name: source,
-      }));
-
-      const { error } = await supabase
-        .from('user_hidden_sources')
-        .insert(sourcesToInsert);
-
-      if (error) {
-        console.error('Error updating hidden sources:', error);
-        return false;
-      }
+    await client.query('BEGIN');
+    await client.query('DELETE FROM user_hidden_sources WHERE user_id = $1', [userId]);
+    const unique = [...new Set(sources)];
+    for (const source of unique) {
+      await client.query(
+        'INSERT INTO user_hidden_sources (user_id, source_name) VALUES ($1, $2) ON CONFLICT DO NOTHING',
+        [userId, source],
+      );
     }
-
+    await client.query('COMMIT');
     return true;
   } catch (error) {
-    console.error('Error in updateUserHiddenSources:', error);
+    await client.query('ROLLBACK');
+    console.error('updateUserHiddenSources error:', error);
     return false;
+  } finally {
+    client.release();
   }
 }
 
-/**
- * Get user hidden sources
- */
 export async function getUserHiddenSources(userId: string): Promise<string[]> {
-  if (!isSupabaseConfigured) {
-    try {
-      const store = await readLocalAuthStore();
-      return (store.hidden_sources || [])
-        .filter((pref) => pref.user_id === userId)
-        .map((pref) => pref.source_name);
-    } catch (error) {
-      console.error('Error in local getUserHiddenSources:', error);
-      return [];
-    }
-  }
-
-  try {
-    const { data, error } = await supabase
-      .from('user_hidden_sources')
-      .select('source_name')
-      .eq('user_id', userId);
-
-    if (error) {
-      console.error('Error fetching hidden sources:', error);
-      return [];
-    }
-
-    return data.map((pref) => pref.source_name);
-  } catch (error) {
-    console.error('Error in getUserHiddenSources:', error);
-    return [];
-  }
+  const { rows } = await pool.query<{ source_name: string }>(
+    'SELECT source_name FROM user_hidden_sources WHERE user_id = $1',
+    [userId],
+  );
+  return rows.map((r) => r.source_name);
 }
