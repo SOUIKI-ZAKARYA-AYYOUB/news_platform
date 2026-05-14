@@ -739,7 +739,8 @@ function rewriteHeadline(article, clusterArticlesForStory) {
       const rightLength = right.length;
       const leftScore = leftLength >= 35 && leftLength <= 140 ? 1 : 0;
       const rightScore = rightLength >= 35 && rightLength <= 140 ? 1 : 0;
-      return rightScore - leftScore || leftLength - rightLength;
+      // Prefer longer headlines when scores are tied — more informative
+      return rightScore - leftScore || rightLength - leftLength;
     });
 
   let headline = candidates[0] ?? "News update";

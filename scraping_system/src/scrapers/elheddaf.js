@@ -209,7 +209,7 @@ function pickArticlesForWindowOrFallback(scrapedArticles, hours, now = new Date(
   }
 
   return normalized
-    .sort((left, right) => right.publication_date.localeCompare(left.publication_date))
+    .sort((left, right) => new Date(right.publication_date).getTime() - new Date(left.publication_date).getTime())
     .slice(0, 10);
 }
 
@@ -240,8 +240,9 @@ export async function scrapeElheddaf({ hours }) {
   const entries = [...discovered.entries()];
   const scraped = [];
 
-  for (let index = 0; index < entries.length; index += 8) {
-    const batch = entries.slice(index, index + 3);
+  const BATCH_SIZE = 3;
+  for (let index = 0; index < entries.length; index += BATCH_SIZE) {
+    const batch = entries.slice(index, index + BATCH_SIZE);
     const results = await Promise.all(
       batch.map(([url, fallbackCategory]) => scrapeArticle(url, fallbackCategory, errors))
     );
