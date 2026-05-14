@@ -7,6 +7,16 @@ import type { Article } from '@/lib/supabase';
 
 export const runtime = 'nodejs';
 
+function parseArticle(row: Article): Article {
+  return {
+    ...row,
+    id: Number(row.id),
+    category_id: Number(row.category_id),
+    cluster_size: row.cluster_size != null ? Number(row.cluster_size) : undefined,
+    source_count: row.source_count != null ? Number(row.source_count) : undefined,
+  };
+}
+
 function filterHiddenSources(articles: Article[], hiddenSources: string[]): Article[] {
   if (!hiddenSources.length) return articles;
   const hidden = new Set(hiddenSources.map((s) => s.toLowerCase()));
@@ -61,7 +71,7 @@ export async function GET(request: NextRequest) {
       }
 
       const { rows } = await pool.query<Article>(query, params);
-      let articles = filterHiddenSources(rows, hiddenSources);
+      let articles = filterHiddenSources(rows.map(parseArticle), hiddenSources);
       if (requestedLimit !== null) articles = articles.slice(0, requestedLimit);
 
       return NextResponse.json(
@@ -71,7 +81,7 @@ export async function GET(request: NextRequest) {
     }
 
     const { rows } = await pool.query<Article>(query, params);
-    return NextResponse.json({ articles: rows }, { status: 200 });
+    return NextResponse.json({ articles: rows.map(parseArticle) }, { status: 200 });
   } catch (error) {
     console.error('Get articles error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
@@ -103,7 +113,7 @@ export async function POST(request: NextRequest) {
       ],
     );
 
-    return NextResponse.json({ article: rows[0] }, { status: 201 });
+    return NextResponse.json({ article: parseArticle(rows[0]) }, { status: 201 });
   } catch (error) {
     console.error('Create article error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

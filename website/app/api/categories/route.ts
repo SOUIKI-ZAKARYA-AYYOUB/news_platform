@@ -5,6 +5,10 @@ import type { Category } from '@/lib/supabase';
 
 export const runtime = 'nodejs';
 
+function parseCategory(row: Category): Category {
+  return { ...row, id: Number(row.id) };
+}
+
 export async function GET(request: NextRequest) {
   const usedOnly =
     request.nextUrl.searchParams.get('usedOnly') === 'true' ||
@@ -33,7 +37,7 @@ export async function GET(request: NextRequest) {
 
       return NextResponse.json(
         {
-          categories: rows,
+          categories: rows.map(parseCategory),
           fallback: false,
           usedOnly,
           articleCounts: includeCounts ? articleCounts : undefined,
@@ -44,7 +48,7 @@ export async function GET(request: NextRequest) {
 
     const { rows } = await pool.query<Category>('SELECT * FROM categories ORDER BY name ASC');
 
-    return NextResponse.json({ categories: rows, fallback: false, usedOnly: false }, { status: 200 });
+    return NextResponse.json({ categories: rows.map(parseCategory), fallback: false, usedOnly: false }, { status: 200 });
   } catch (error) {
     console.error('Get categories error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });

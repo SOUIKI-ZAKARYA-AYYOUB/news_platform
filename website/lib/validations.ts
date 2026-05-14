@@ -37,7 +37,7 @@ export const signupPasswordSchema = z.object({
   username: usernameSchema,
   password: passwordSchema,
   confirmPassword: z.string(),
-  categoryIds: z.array(z.number()).optional(),
+  categoryIds: z.array(z.coerce.number()).optional(),
   hiddenSources: z.array(z.string()).optional(),
 }).refine((data) => data.password === data.confirmPassword, {
   message: 'Passwords do not match',
@@ -47,7 +47,7 @@ export const signupPasswordSchema = z.object({
 // Signup categories schema
 export const signupCategoriesSchema = z.object({
   userId: z.string(),
-  categoryIds: z.array(z.number()).min(1, 'Please select at least one category'),
+  categoryIds: z.array(z.coerce.number()).min(1, 'Please select at least one category'),
   hiddenSources: z.array(z.string()).optional(),
 });
 
@@ -74,6 +74,6 @@ export const profileUpdateSchema = z.object({
 
 // Category preference schema
 export const categoryPreferenceSchema = z.object({
-  categoryIds: z.array(z.number()).min(1, 'Please select at least one category'),
+  categoryIds: z.array(z.coerce.number()).min(1, 'Please select at least one category'),
   hiddenSources: z.array(z.string()).optional(),
 });
