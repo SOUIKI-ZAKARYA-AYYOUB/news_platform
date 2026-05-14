@@ -3,13 +3,13 @@
   "version": "1.0.0",
   "description": "JavaScript news scraper for multiple Algeria and regional news sources.",
   "keywords": [],
-  "homepage": "https://github.com/SOUIKI-ZAKARYA-AYYOUB/news_system#readme",
+  "homepage": "https://github.com/SOUIKI-ZAKARYA-AYYOUB/news_platform#readme",
   "bugs": {
-    "url": "https://github.com/SOUIKI-ZAKARYA-AYYOUB/news_system/issues"
+    "url": "https://github.com/SOUIKI-ZAKARYA-AYYOUB/news_platform/issues"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/SOUIKI-ZAKARYA-AYYOUB/news_system.git"
+    "url": "git+https://github.com/SOUIKI-ZAKARYA-AYYOUB/news_platform.git"
   },
   "license": "ISC",
   "author": "sk",

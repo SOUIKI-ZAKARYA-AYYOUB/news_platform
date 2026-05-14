@@ -7,8 +7,9 @@ const DEFAULT_HEADERS = {
 };
 
 const FETCH_TIMEOUT_MS = 30_000;
+const RETRY_DELAYS_MS = [1_000, 3_000];
 
-export async function fetchText(url, options = {}) {
+async function fetchOnce(url, options) {
   const controller = new AbortController();
   const timer = setTimeout(() => controller.abort(), FETCH_TIMEOUT_MS);
 
@@ -31,4 +32,22 @@ export async function fetchText(url, options = {}) {
   } finally {
     clearTimeout(timer);
   }
+}
+
+export async function fetchText(url, options = {}) {
+  let lastError;
+
+  for (const delay of [0, ...RETRY_DELAYS_MS]) {
+    if (delay > 0) {
+      await new Promise((resolve) => setTimeout(resolve, delay));
+    }
+
+    try {
+      return await fetchOnce(url, options);
+    } catch (error) {
+      lastError = error;
+    }
+  }
+
+  throw lastError;
 }

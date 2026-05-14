@@ -11,6 +11,10 @@ export function createScrapeError(source, url, error) {
 }
 
 export function chunk(items, size) {
+  if (size <= 0) {
+    throw new RangeError("chunk size must be greater than zero");
+  }
+
   const chunks = [];
 
   for (let index = 0; index < items.length; index += size) {
@@ -18,6 +22,11 @@ export function chunk(items, size) {
   }
 
   return chunks;
+}
+
+function toTimestamp(publication_date) {
+  const ms = new Date(publication_date).getTime();
+  return Number.isNaN(ms) ? 0 : ms;
 }
 
 export function pickRecentOrFallback(articles, hours, options = {}) {
@@ -35,6 +44,6 @@ export function pickRecentOrFallback(articles, hours, options = {}) {
   }
 
   return usable
-    .sort((left, right) => right.publication_date.localeCompare(left.publication_date))
+    .sort((left, right) => toTimestamp(right.publication_date) - toTimestamp(left.publication_date))
     .slice(0, fallbackLimit);
 }

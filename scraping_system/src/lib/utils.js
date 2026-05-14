@@ -22,15 +22,22 @@ export function decodeHtmlEntities(value) {
   }
 
   return value
-    .replace(/&nbsp;/gi, " ")
-    .replace(/&hellip;/gi, "...")
-    .replace(/&amp;/gi, "&")
-    .replace(/&quot;/gi, '"')
-    .replace(/&#039;/g, "'")
-    .replace(/&#8217;/g, "’")
-    .replace(/&#8211;/g, "-")
-    .replace(/&#8220;/g, "“")
-    .replace(/&#8221;/g, "”");
+    .replace(/&nbsp;/gi, “ “)
+    .replace(/&hellip;/gi, “...”)
+    .replace(/&amp;/gi, “&”)
+    .replace(/&lt;/gi, “<”)
+    .replace(/&gt;/gi, “>”)
+    .replace(/&quot;/gi, ‘”’)
+    .replace(/&apos;/gi, “’”)
+    .replace(/&#039;/g, “’”)
+    .replace(/&#8217;/g, “’”)
+    .replace(/&#8216;/g, “‘”)
+    .replace(/&#8211;/g, “–“)
+    .replace(/&#8212;/g, “—“)
+    .replace(/&#8220;/g, ““”)
+    .replace(/&#8221;/g, “””)
+    .replace(/&#x([0-9a-f]+);/gi, (_, hex) => String.fromCodePoint(parseInt(hex, 16)))
+    .replace(/&#([0-9]+);/g, (_, dec) => String.fromCodePoint(Number(dec)));
 }
 
 export function parseArgs(argv) {

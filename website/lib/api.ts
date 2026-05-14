@@ -45,3 +45,17 @@ export async function apiFetch(
     clearTimeout(timeoutId);
   });
 }
+
+export async function apiJson<T>(
+  path: string,
+  init: ApiFetchOptions = {}
+): Promise<T> {
+  const response = await apiFetch(path, init);
+
+  if (!response.ok) {
+    const text = await response.text().catch(() => '');
+    throw new Error(`API error ${response.status} for ${path}: ${text}`);
+  }
+
+  return response.json() as Promise<T>;
+}
